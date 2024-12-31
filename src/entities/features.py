@@ -94,8 +94,6 @@ class Run(metaclass=Singleton):
     normalize_observations: bool
     sequence_wise_normalization: bool
     dtype: torch.dtype
-    action_per_step: float  # example : 0.1 means each ten timestep one action is doable. 0 means no limit.
-    stock_names: List[str] = None
 
     def get_name(self):
         dictionary = asdict(self)

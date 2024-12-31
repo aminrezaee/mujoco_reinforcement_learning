@@ -7,7 +7,7 @@ from utils.logger import Logger
 from utils.io import find_experiment_name
 from entities.features import *
 import shutil
-from os import makedirs
+from os import makedirs , listdir
 
 
 def main():
@@ -17,8 +17,6 @@ def main():
     parser.add_argument("-n", "--name", default="", type=str)
     args = parser.parse_args()
     experiment_id = int(args.experiment_id)
-    
-    agent = PPOAgent()
     environment_helper = EnvironmentHelper()
     max_reward = 0
     reward_config = RewardConfig()
@@ -29,12 +27,17 @@ def main():
                             entropy_eps=1e-2, advantage_scaler=1e+0, normalize_advantage=True,
                             critic_coeffiecient=1.0)
     agent_config = AgentConfig()
-    network_config = NetworkConfig(activation_class=ELU, use_bias=False)
+    network_config = NetworkConfig(input_shape=67,activation_class=ELU, use_bias=False)
     environment_config = EnvironmentConfig()
     dynamic_config = DynamicConfig(0, 0, 0)
     results_dir: str = 'outputs/results'
     experiments_directory = f"{results_dir}/experiments"
     makedirs(experiments_directory, exist_ok=True)
+    if experiment_id < 0:  # then create a new one
+        directories = listdir(experiments_directory)
+        experiment_id = 0 if len(directories) == 0 else int(
+            max([int(item.split("_")[0]) for item in directories]) + 1)
+        resume = False
     if len(args.name) == 0:
         experiment_name = find_experiment_name(experiment_id, experiments_directory)
         current_experiment_path = f"{experiments_directory}/{experiment_id}_{experiment_name}"
@@ -49,6 +52,7 @@ def main():
                 normalize_rewards=True, normalize_actions=True, normalize_observations=True,
                 sequence_wise_normalization=True, dtype=torch.float32, action_per_step=0)
     
+    agent = PPOAgent()
     makedirs(f"{Run.instance().experiment_path}/networks/best_results", exist_ok=True)
     makedirs(f"{Run.instance().experiment_path}/visualizations/best_results", exist_ok=True)
     for i in range(args.iterations):
@@ -67,3 +71,5 @@ def add_episode_to_best_results():
     shutil.copytree(f"{Run.experiment_path}/networks/{Run.dynamic_config.current_episode}", f"{Run.experiment_path}/networks/best_results/{Run.dynamic_config.current_episode}")
     shutil.copytree(f"{Run.experiment_path}/visualizations/{Run.dynamic_config.current_episode}", f"{Run.experiment_path}/visualizations/best_results/{Run.dynamic_config.current_episode}")
     
+if __name__ == "__main__":
+    main()
