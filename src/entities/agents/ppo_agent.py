@@ -12,12 +12,12 @@ class PPOAgent(Agent):
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=Run.instance().training_config.learning_rate)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=Run.instance().training_config.learning_rate)
         
-    def act(self, state:torch.Tensor, return_log_probs:bool=False) -> torch.Tensor:
-        probabilities = self.actor(state)
-        distribution = torch.distributions.Categorical(logits=probabilities)
+    def act(self, state:torch.Tensor, return_dist:bool=False) -> torch.Tensor:
+        means , stds = self.actor(state)
+        distribution = torch.distributions.Normal(means, stds)
         action = distribution.sample()
-        if return_log_probs:
-            return action , distribution.probs.log()
+        if return_dist:
+            return action , distribution
         return action
     
     def train(self , memory:TensorDict):
@@ -33,8 +33,8 @@ class PPOAgent(Agent):
                 batch = shuffled_memory[:batch_size]
                 action = batch['action']
                 action_log_prob = batch['action_log_prob']
-                _ , new_action_log_probs = self.act(batch['current_state'] , return_log_probs=True)
-                new_action_log_prob = new_action_log_probs.gather(1, action)
+                _ , distribution = self.act(batch['current_state'] , return_dist=True)
+                new_action_log_prob = distribution.log_prob(action).sum()
                 # critic loss
                 current_state_value = batch['current_state_value']
                 current_state_value_target = batch['current_state_value_target']

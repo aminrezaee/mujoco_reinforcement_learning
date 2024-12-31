@@ -6,7 +6,7 @@ class Agent(ABC):
     def __init__(self):
         pass
     
-    def act(self, state , return_log_probs:bool=False):
+    def act(self, state , return_dist:bool=False):
         pass
     
     def train(self , memory:TensorDict):
