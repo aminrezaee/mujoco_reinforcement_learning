@@ -1,9 +1,11 @@
+from entities.features import Run
 from entities.agents.agent import Agent
 from dm_control import suite
 import numpy as np
 import torch
 from tensordict import TensorDict
 from utils.logger import Logger
+from torchrl.objectives.value.functional import generalized_advantage_estimate
 
 class EnvironmentHelper:
     def __init__(self):
@@ -31,7 +33,8 @@ class EnvironmentHelper:
         next_data = torch.tensor(next_data, dtype=torch.float32)
         return next_data
     
-    def rollout(self , agent:Agent):
+    def rollout(self , agent:Agent , visualize:bool=False):
+        self.reset()
         next_state = self.get_state()
         while not self.timestep.last():
             current_state = torch.clone(next_state)
@@ -50,12 +53,17 @@ class EnvironmentHelper:
         Logger.log("total episode reward: ", self.total_reward)
         return torch.cat(self.memory , dim=0)
     
+    @torch.no_grad
     def calculate_advantages(self , memory:TensorDict):
         rewards = memory['reward']
+        done = torch.zeros_like(rewards)
+        done[-1] = 1
         current_state_values = memory['current_state_value']
         next_state_values = memory['next_state_value']
-        
-        pass
+        advantage, value_target = generalized_advantage_estimate(Run.instance().ppo_config.gamma, Run.instance().ppo_config.lmbda,
+                                                                 current_state_values, next_state_values , rewards, done , done)
+        memory['current_state_value_target'] = value_target
+        memory['advantage'] = advantage
             
 if __name__ == "__main__":
     environment_helper = EnvironmentHelper()

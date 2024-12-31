@@ -28,14 +28,7 @@ class TrainingConfig:
 
 @dataclass
 class EnvironmentConfig:
-    maximum_timesteps: int  # Number of frames collected per training iteration
-    maximum_timesteps_test: int
-
-    def get_maximum_timestep(self, validation: bool):
-        if validation:
-            return self.maximum_timesteps_test
-        return self.maximum_timesteps
-
+    pass
 
 @dataclass
 class AgentConfig:

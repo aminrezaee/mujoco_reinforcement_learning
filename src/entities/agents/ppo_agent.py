@@ -17,12 +17,12 @@ class PPOAgent(Agent):
     
     def train(self , memory:TensorDict):
         batch_size = Run.instance().training_config.batch_size
-        iterations_per_episode = Run.instance().training_config.iteration_count
+        batches_per_epoch = Run.instance().training_config.batches_per_epoch
         epochs = Run.instance().training_config.epochs_per_iteration
         epoch_losses = [[],[]]
         for _ in range(epochs):
             iteration_losses = [[],[]]
-            for _ in range(iterations_per_episode):
+            for _ in range(batches_per_epoch):
                 idx = torch.randperm(len(memory))
                 shuffled_memory = memory[idx]
                 batch = shuffled_memory[:batch_size]
