@@ -42,7 +42,8 @@ class EnvironmentHelper:
         while not self.timestep.last():
             current_state = torch.clone(next_state)
             current_state_value = agent.get_state_value(current_state)
-            action_log_prob , action = agent.act(current_state , return_log_prob=True)
+            action_log_probs , action = agent.act(current_state , return_log_probs=True)
+            action_log_prob = action_log_probs.gather(1, action)
             self.timestep = self.step(action)
             next_state = self.get_state()
             next_state_value = agent.get_state_value(next_state)
