@@ -20,6 +20,9 @@ class PPOAgent(Agent):
             return action , distribution
         return action
     
+    def get_state_value(self, state):
+        return self.critic(state)
+    
     def train(self , memory:TensorDict):
         batch_size = Run.instance().training_config.batch_size
         batches_per_epoch = Run.instance().training_config.batches_per_epoch
@@ -59,7 +62,8 @@ class PPOAgent(Agent):
             epoch_losses[1].append(sum(iteration_losses[1])/len(iteration_losses[1]))
         episode_actor_loss = sum(epoch_losses[0])/len(epoch_losses[0])
         episode_critic_loss = sum(epoch_losses[1])/len(epoch_losses[1])
-        Logger.log(f"Actor Loss: {episode_actor_loss} Critic Loss: {episode_critic_loss} Epoch Loss: {episode_actor_loss + episode_critic_loss}")
+        Logger.log(f"Actor Loss: {episode_actor_loss} Critic Loss: {episode_critic_loss} Epoch Loss: {episode_actor_loss + episode_critic_loss}" , 
+                   episode=Run.instance().dynamic_config.current_episode , log_type=Logger.TRAINING_TYPE)
         pass
     
     def save(self):

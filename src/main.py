@@ -61,7 +61,7 @@ def main():
         agent.save()
         if environment_helper.total_reward > max_reward:
             max_reward = environment_helper.total_reward
-            Logger.log(f"max reward changed to: {max_reward}")
+            Logger.log(f"max reward changed to: {max_reward}" , episode=Run.instance().dynamic_config.current_episode , log_type=Logger.REWARD_TYPE)
             add_episode_to_best_results(agent)
         Run.dynamic_config.next_episode()
     

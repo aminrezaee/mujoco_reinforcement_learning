@@ -35,7 +35,7 @@ class EnvironmentHelper:
             # print(f"{key}: {value}")
             next_data = np.append(next_data, value)
         next_data = torch.tensor(next_data, dtype=torch.float32)
-        return next_data
+        return next_data[None,:]
     
     def rollout(self , agent:Agent , visualize:bool=False):
         self.reset()
@@ -43,22 +43,22 @@ class EnvironmentHelper:
         while not self.timestep.last():
             current_state = torch.clone(next_state)
             current_state_value = agent.get_state_value(current_state)
-            action_log_probs , action = agent.act(current_state , return_log_probs=True)
-            action_log_prob = action_log_probs.gather(1, action)
+            action , distribution  = agent.act(current_state , return_dist=True)
+            action_log_prob = distribution.log_prob(action).sum()
             self.timestep = self.step(action)
             next_state = self.get_state()
             next_state_value = agent.get_state_value(next_state)
-            memory_item = {'current_state':current_state[None,:],
-                           'current_state_value':current_state_value[None,:] , 
-                           'next_state_value':next_state_value[None,:], 
-                           'action':action[None,:], 
-                           'action_log_prob':action_log_prob[None,:],
-                           'reward':self.timestep.reward[None,:]}
+            memory_item = {'current_state':current_state,
+                           'current_state_value':current_state_value , 
+                           'next_state_value':next_state_value, 
+                           'action':action, 
+                           'action_log_prob':torch.Tensor([[action_log_prob]]).to(current_state.device),
+                           'reward':torch.Tensor([[self.timestep.reward]]).to(current_state.device)}
             self.memory.append(TensorDict(memory_item,batch_size=1))
             if visualize:
                 rendered_rgb_image = self.environment.physics.render(height=160, width=240)
                 self.images.append(rendered_rgb_image)
-        Logger.log("total episode reward: ", self.total_reward)
+        Logger.log(f"total episode reward: {self.total_reward}", episode=Run.instance().dynamic_config.current_episode, log_type=Logger.REWARD_TYPE)
         if visualize:
             self.visualize()
         return torch.cat(self.memory , dim=0)

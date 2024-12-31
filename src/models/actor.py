@@ -11,5 +11,5 @@ class Actor(nn.Module):
     def forward(self, x):
         output = self.network(x)
         means = output[:,:21]
-        stds = output[:,21:]
+        stds = output[:,21:].abs()
         return means , stds
