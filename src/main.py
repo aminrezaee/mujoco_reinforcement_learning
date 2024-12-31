@@ -46,8 +46,8 @@ def main():
     run = Run(reward_config, training_config, ppo_config, environment_config,
                 agent_config, network_config, dynamic_config,
                 processors=4, device='cpu', experiment_path=current_experiment_path,
-                verbose=False, two_way_market=False, kill_agents=False,
-                central_critic=True, central_actor=True, trainable_critic=True,
+                verbose=False,
+                central_critic=True, central_actor=True,
                 normalize_rewards=True, normalize_actions=True, normalize_observations=True,
                 sequence_wise_normalization=True, dtype=torch.float32)
     
