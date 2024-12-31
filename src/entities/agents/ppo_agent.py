@@ -13,7 +13,12 @@ class PPOAgent(Agent):
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=Run.instance().training_config.learning_rate)
         
     def act(self, state:torch.Tensor, return_log_probs:bool=False) -> torch.Tensor:
-        return self.actor(state)
+        probabilities = self.actor(state)
+        distribution = torch.distributions.Categorical(probs=probabilities)
+        action = distribution.sample()
+        if return_log_probs:
+            return action , probabilities.log()
+        return action
     
     def train(self , memory:TensorDict):
         batch_size = Run.instance().training_config.batch_size
