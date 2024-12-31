@@ -74,6 +74,7 @@ class EnvironmentHelper:
         rewards = memory['reward']
         done = torch.zeros_like(rewards)
         done[-1] = 1
+        done = done.to(torch.bool)
         current_state_values = memory['current_state_value']
         next_state_values = memory['next_state_value']
         advantage, value_target = generalized_advantage_estimate(Run.instance().ppo_config.gamma, Run.instance().ppo_config.lmbda,

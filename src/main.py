@@ -43,6 +43,7 @@ def main():
         current_experiment_path = f"{experiments_directory}/{experiment_id}_{experiment_name}"
     else:
         current_experiment_path = f"{experiments_directory}/{experiment_id}_{args.name}"
+    
     run = Run(reward_config, training_config, ppo_config, environment_config,
                 agent_config, network_config, dynamic_config,
                 processors=4, device='cpu', experiment_path=current_experiment_path,
@@ -50,14 +51,16 @@ def main():
                 central_critic=True, central_actor=True,
                 normalize_rewards=True, normalize_actions=True, normalize_observations=True,
                 sequence_wise_normalization=True, dtype=torch.float32)
-    
+    Logger.log("initialize src directory!", episode=run.dynamic_config.current_episode,
+               path=current_experiment_path, log_type=Logger.TRAINING_TYPE)
     agent = PPOAgent()
     makedirs(f"{Run.instance().experiment_path}/networks/best_results", exist_ok=True)
     makedirs(f"{Run.instance().experiment_path}/visualizations/best_results", exist_ok=True)
     for i in range(args.iterations):
         memory = environment_helper.rollout(agent) # train rollout
+        environment_helper.calculate_advantages(memory)
         agent.train(memory)
-        environment_helper.rollout(visualize=True) # test rollout
+        environment_helper.rollout(agent, visualize=True) # test rollout
         agent.save()
         if environment_helper.total_reward > max_reward:
             max_reward = environment_helper.total_reward
