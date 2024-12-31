@@ -6,6 +6,7 @@ import torch
 from tensordict import TensorDict
 from utils.logger import Logger
 from torchrl.objectives.value.functional import generalized_advantage_estimate
+import mediapy as media
 
 class EnvironmentHelper:
     def __init__(self):
@@ -14,11 +15,13 @@ class EnvironmentHelper:
         self.timestep = self.environment.reset()
         self.total_reward = 0
         self.memory = []
+        self.images = []
         
     def reset(self):
         self.timestep = self.environment.reset()
         self.total_reward = 0
         self.memory = []
+        self.images = []
         
     def step(self, action:np.ndarray):
         self.timestep = self.environment.step(action)
@@ -50,8 +53,16 @@ class EnvironmentHelper:
                            'action_log_prob':action_log_prob[None,:],
                            'reward':self.timestep.reward[None,:]}
             self.memory.append(TensorDict(memory_item,batch_size=1))
+            if visualize:
+                rendered_rgb_image = self.environment.physics.render(height=160, width=240)
+                self.images.append(rendered_rgb_image)
         Logger.log("total episode reward: ", self.total_reward)
+        if visualize:
+            self.visualize()
         return torch.cat(self.memory , dim=0)
+    
+    def visualize(self):
+        media.show_video(self.images, fps=30)
     
     @torch.no_grad
     def calculate_advantages(self , memory:TensorDict):
@@ -65,9 +76,6 @@ class EnvironmentHelper:
         memory['current_state_value_target'] = value_target
         memory['advantage'] = advantage
             
-if __name__ == "__main__":
-    environment_helper = EnvironmentHelper()
-    environment_helper.main()
         
 
 
