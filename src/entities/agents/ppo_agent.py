@@ -14,10 +14,10 @@ class PPOAgent(Agent):
         
     def act(self, state:torch.Tensor, return_log_probs:bool=False) -> torch.Tensor:
         probabilities = self.actor(state)
-        distribution = torch.distributions.Categorical(probs=probabilities)
+        distribution = torch.distributions.Categorical(logits=probabilities)
         action = distribution.sample()
         if return_log_probs:
-            return action , probabilities.log()
+            return action , distribution.probs.log()
         return action
     
     def train(self , memory:TensorDict):

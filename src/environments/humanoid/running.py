@@ -7,6 +7,7 @@ from tensordict import TensorDict
 from utils.logger import Logger
 from torchrl.objectives.value.functional import generalized_advantage_estimate
 import mediapy as media
+from os import makedirs
 
 class EnvironmentHelper:
     def __init__(self):
@@ -63,7 +64,10 @@ class EnvironmentHelper:
         return torch.cat(self.memory , dim=0)
     
     def visualize(self):
-        media.show_video(self.images, fps=30)
+        run = Run.instance()
+        path = f"{run.experiment_path}/visualizations/{run.dynamic_config.current_episode}"
+        makedirs(path, exist_ok=True)
+        media.write_video(f"{path}/video.mp4",self.images, fps=30)
     
     @torch.no_grad
     def calculate_advantages(self , memory:TensorDict):
