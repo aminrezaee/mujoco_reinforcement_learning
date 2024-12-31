@@ -65,13 +65,14 @@ def main():
         if environment_helper.total_reward > max_reward:
             max_reward = environment_helper.total_reward
             Logger.log(f"max reward changed to: {max_reward}" , episode=Run.instance().dynamic_config.current_episode , log_type=Logger.REWARD_TYPE)
-            add_episode_to_best_results(agent)
-        Run.dynamic_config.next_episode()
+            add_episode_to_best_results()
+        Run.instance().dynamic_config.next_episode()
     
 
 def add_episode_to_best_results():
-    shutil.copytree(f"{Run.experiment_path}/networks/{Run.dynamic_config.current_episode}", f"{Run.experiment_path}/networks/best_results/{Run.dynamic_config.current_episode}")
-    shutil.copytree(f"{Run.experiment_path}/visualizations/{Run.dynamic_config.current_episode}", f"{Run.experiment_path}/visualizations/best_results/{Run.dynamic_config.current_episode}")
+    run = Run.instance()
+    shutil.copytree(f"{run.experiment_path}/networks/{run.dynamic_config.current_episode}", f"{run.experiment_path}/networks/best_results/{run.dynamic_config.current_episode}")
+    shutil.copytree(f"{run.experiment_path}/visualizations/{run.dynamic_config.current_episode}", f"{run.experiment_path}/visualizations/best_results/{run.dynamic_config.current_episode}")
     
 if __name__ == "__main__":
     main()

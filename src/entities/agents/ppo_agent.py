@@ -5,6 +5,7 @@ from models.critic import Critic
 import torch
 from tensordict import TensorDict
 from utils.logger import Logger
+from os import makedirs
 class PPOAgent(Agent):
     def __init__(self):
         self.actor = Actor()
@@ -69,6 +70,7 @@ class PPOAgent(Agent):
     def save(self):
         experiment_path = Run.instance().experiment_path
         current_episode = Run.instance().dynamic_config.current_episode
+        makedirs(f"{experiment_path}/networks/{current_episode}", exist_ok=True)
         torch.save(self.actor.state_dict(), f"{experiment_path}/networks/{current_episode}/actor.pth")
         torch.save(self.critic.state_dict(), f"{experiment_path}/networks/{current_episode}/critic.pth")
         torch.save(self.actor_optimizer.state_dict(), f"{experiment_path}/networks/{current_episode}/actor_optimizer.pth")
