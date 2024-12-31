@@ -58,7 +58,8 @@ class EnvironmentHelper:
             if visualize:
                 rendered_rgb_image = self.environment.physics.render(height=160, width=240)
                 self.images.append(rendered_rgb_image)
-        Logger.log(f"total episode reward: {self.total_reward}", episode=Run.instance().dynamic_config.current_episode, log_type=Logger.REWARD_TYPE)
+        Logger.log(f"total episode reward: {self.total_reward}", episode=Run.instance().dynamic_config.current_episode, 
+                   log_type=Logger.REWARD_TYPE , print_message=True)
         if visualize:
             self.visualize()
         return torch.cat(self.memory , dim=0)

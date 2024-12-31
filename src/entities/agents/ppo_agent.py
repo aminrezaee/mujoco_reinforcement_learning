@@ -64,7 +64,7 @@ class PPOAgent(Agent):
         episode_actor_loss = sum(epoch_losses[0])/len(epoch_losses[0])
         episode_critic_loss = sum(epoch_losses[1])/len(epoch_losses[1])
         Logger.log(f"Actor Loss: {episode_actor_loss} Critic Loss: {episode_critic_loss} Epoch Loss: {episode_actor_loss + episode_critic_loss}" , 
-                   episode=Run.instance().dynamic_config.current_episode , log_type=Logger.TRAINING_TYPE)
+                   episode=Run.instance().dynamic_config.current_episode , log_type=Logger.TRAINING_TYPE , print_message=True)
         pass
     
     def save(self):
