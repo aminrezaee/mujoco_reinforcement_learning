@@ -78,11 +78,12 @@ def main():
             add_episode_to_best_results()
         Run.instance().dynamic_config.next_episode()
         removing_epoch = int(i-10)
-        removing_path  = f"{run.experiment_path}/networks/{removing_epoch}"
         
-        if os.path.exists(removing_path):
+        if os.path.exists(f"{run.experiment_path}/networks/{removing_epoch}"):
             shutil.rmtree(f"{run.experiment_path}/networks/{removing_epoch}")
+        if os.path.exists(f"{run.experiment_path}/visualizations/{removing_epoch}"):
             shutil.rmtree(f"{run.experiment_path}/visualizations/{removing_epoch}")
+        if os.path.exists(f"{run.experiment_path}/debugs/{removing_epoch}"):
             shutil.rmtree(f"{run.experiment_path}/debugs/{removing_epoch}")
             
             
@@ -92,7 +93,9 @@ def main():
 def add_episode_to_best_results():
     run = Run.instance()
     shutil.copytree(f"{run.experiment_path}/networks/{run.dynamic_config.current_episode}", f"{run.experiment_path}/networks/best_results/{run.dynamic_config.current_episode}")
-    shutil.copytree(f"{run.experiment_path}/visualizations/{run.dynamic_config.current_episode}", f"{run.experiment_path}/visualizations/best_results/{run.dynamic_config.current_episode}")
+    if os.path.exists(f"{run.experiment_path}/visualizations/{run.dynamic_config.current_episode}"):
+        shutil.copytree(f"{run.experiment_path}/visualizations/{run.dynamic_config.current_episode}", 
+                        f"{run.experiment_path}/visualizations/best_results/{run.dynamic_config.current_episode}")
     
 if __name__ == "__main__":
     main()
