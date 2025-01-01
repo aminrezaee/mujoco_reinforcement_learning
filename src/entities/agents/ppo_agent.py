@@ -6,6 +6,7 @@ import torch
 from tensordict import TensorDict
 from utils.logger import Logger
 from os import makedirs
+
 class PPOAgent(Agent):
     def __init__(self):
         self.actor = Actor()
@@ -45,6 +46,8 @@ class PPOAgent(Agent):
                 critic_loss:torch.Tensor = (current_state_value - current_state_value_target).pow(2).mean()
                 self.critic_optimizer.zero_grad()
                 critic_loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), Run.instance().ppo_config.max_grad_norm)
+
                 self.critic_optimizer.step()
                 
                 # actor loss
@@ -55,6 +58,7 @@ class PPOAgent(Agent):
                 actor_loss:torch.Tensor = -torch.min(surrogate1, surrogate2).mean()
                 self.actor_optimizer.zero_grad()
                 actor_loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.actor.parameters(), Run.instance().ppo_config.max_grad_norm)
                 self.actor_optimizer.step()
                 
                 iteration_losses[0].append(actor_loss.item())
