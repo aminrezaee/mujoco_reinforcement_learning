@@ -14,6 +14,6 @@ class Actor(nn.Module):
         x_std = x_std + 0.01 * torch.randn_like(x_std)
         output_mean = self.network(x)
         means = nn.Tanh()(output_mean)
-        output_std:torch.Tensor = self.network(x_std)
+        output_std:torch.Tensor = nn.Tanh()(self.network(x_std))
         stds = output_std.std(dim=0)
         return means , stds

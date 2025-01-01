@@ -45,6 +45,7 @@ class EnvironmentHelper:
         next_data = next_data/std
         return next_data[None,:]
     
+    @torch.no_grad
     def rollout(self , agent:Agent , visualize:bool=False):
         self.reset()
         next_state = self.get_state()
@@ -81,6 +82,8 @@ class EnvironmentHelper:
     @torch.no_grad
     def calculate_advantages(self , memory:TensorDict):
         rewards = memory['reward']
+        rewards = rewards - rewards.mean()
+        rewards = rewards/rewards.std()
         done = torch.zeros_like(rewards)
         done[-1] = 1
         done = done.to(torch.bool)
@@ -88,6 +91,7 @@ class EnvironmentHelper:
         next_state_values = memory['next_state_value']
         advantage, value_target = generalized_advantage_estimate(Run.instance().ppo_config.gamma, Run.instance().ppo_config.lmbda,
                                                                  current_state_values, next_state_values , rewards, done , done)
+        
         memory['current_state_value_target'] = value_target
         memory['advantage'] = advantage
             

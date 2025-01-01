@@ -1,8 +1,8 @@
 import torch
 from torch import Tensor
-from torch.nn.init import kaiming_uniform_
+from torch.nn.init import xavier_uniform_
 from torch.nn.modules import Dropout, Linear, Module, Sequential, Tanh, GELU, ELU
-
+import numpy as np
 
 class InputNormalization(Module):
 
@@ -12,6 +12,11 @@ class InputNormalization(Module):
         std = torch.where(std == 0, torch.tensor(1e-4).to(std.device), std)
         x_in = x_in / std
         return x_in
+    
+def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
+    torch.nn.init.orthogonal_(layer.weight, std)
+    torch.nn.init.constant_(layer.bias, bias_const)
+    return layer
 
 
 class NetworkBlock(Module):
@@ -31,24 +36,24 @@ class NetworkBlock(Module):
             out_shape = config["shapes"][i]
             layer = Linear(input_shape, out_shape, bias=self.use_bias)
             with torch.no_grad():
-                kaiming_uniform_(layer.weight, nonlinearity='leaky_relu')
-                if self.use_bias:
-                    layer.bias.fill_(0)
+                layer = layer_init(layer)
+                # if self.use_bias:
+                #     layer.bias.fill_(0)
             layers.append(layer)
             if config["activation"] is not None:
                 layers.append(config["activation"]())
                 layers.append(Dropout(0.1))
-            layers.append(InputNormalization())
+            # layers.append(InputNormalization())
             input_shape = out_shape
-        layers.append(Dropout(0.2))
+        # layers.append(Dropout(0.2))
         # if use_batchnorm:
         #     layers.append(BatchNorm1d(out_shape))
         self.first_layers = Sequential(*layers)
         self.last_layer = Linear(out_shape, output_shape, bias=self.use_bias)
         with torch.no_grad():
-            kaiming_uniform_(self.last_layer.weight, nonlinearity='leaky_relu')
-            if self.use_bias:
-                self.last_layer.bias.fill_(0)
+            self.last_layer = layer_init(self.last_layer)
+            # if self.use_bias:
+            #     self.last_layer.bias.fill_(0)
         if config["final_activation"] is not None:
             if config["final_activation"] in [Tanh, GELU, ELU]:
                 self.last_layer_activation = config["final_activation"]()
