@@ -81,8 +81,8 @@ def main():
         
         if os.path.exists(f"{run.experiment_path}/networks/{removing_epoch}"):
             shutil.rmtree(f"{run.experiment_path}/networks/{removing_epoch}")
-        if os.path.exists(f"{run.experiment_path}/visualizations/{removing_epoch}"):
-            shutil.rmtree(f"{run.experiment_path}/visualizations/{removing_epoch}")
+        # if os.path.exists(f"{run.experiment_path}/visualizations/{removing_epoch}"):
+        #     shutil.rmtree(f"{run.experiment_path}/visualizations/{removing_epoch}")
         if os.path.exists(f"{run.experiment_path}/debugs/{removing_epoch}"):
             shutil.rmtree(f"{run.experiment_path}/debugs/{removing_epoch}")
             
