@@ -35,6 +35,11 @@ class EnvironmentHelper:
             # print(f"{key}: {value}")
             next_data = np.append(next_data, value)
         next_data = torch.tensor(next_data, dtype=torch.float32)
+        next_data = next_data - next_data.mean()
+        std = next_data.std()
+        if std ==0: 
+            std = 1e-8
+        next_data = next_data/std
         return next_data[None,:]
     
     def rollout(self , agent:Agent , visualize:bool=False):
