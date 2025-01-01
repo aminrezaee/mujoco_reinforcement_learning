@@ -6,6 +6,7 @@ import torch
 from tensordict import TensorDict
 from utils.logger import Logger
 from os import makedirs
+import numpy as np
 
 class PPOAgent(Agent):
     def __init__(self):
@@ -15,7 +16,7 @@ class PPOAgent(Agent):
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=Run.instance().training_config.learning_rate)
         
     def act(self, state:torch.Tensor, return_dist:bool=False) -> torch.Tensor:
-        means , stds = self.actor(state)
+        means , stds = self.actor.act(state)
         distribution = torch.distributions.Normal(means, stds)
         action = distribution.sample()
         if return_dist:
@@ -38,7 +39,8 @@ class PPOAgent(Agent):
                 batch = shuffled_memory[:batch_size]
                 action = batch['action']
                 action_log_prob = batch['action_log_prob']
-                _ , distribution = self.act(batch['current_state'] , return_dist=True)
+                joint_index = np.random.randint(0,7) # we have 7 joints (each with 3 value)
+                _ , distribution = self.actor(batch['current_state'] , joint_index , return_dist=True)
                 new_action_log_prob = distribution.log_prob(action).sum(dim=1)[:,None]
                 # critic loss
                 current_state_value = self.get_state_value(batch['current_state'])
