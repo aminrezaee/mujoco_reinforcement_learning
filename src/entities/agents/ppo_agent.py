@@ -38,7 +38,7 @@ class PPOAgent(Agent):
                 action = batch['action']
                 action_log_prob = batch['action_log_prob']
                 _ , distribution = self.act(batch['current_state'] , return_dist=True)
-                new_action_log_prob = distribution.log_prob(action).sum()
+                new_action_log_prob = distribution.log_prob(action).sum(dim=1)[:,None]
                 # critic loss
                 current_state_value = self.get_state_value(batch['current_state'])
                 current_state_value_target = batch['current_state_value_target']
