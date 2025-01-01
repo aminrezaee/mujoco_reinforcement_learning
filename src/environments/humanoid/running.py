@@ -18,6 +18,9 @@ class EnvironmentHelper:
         self.memory = []
         self.images = []
         
+    def set_step_limit(self , step_limit:int):
+        self.environment._step_limit = step_limit
+        
     def reset(self):
         self.timestep = self.environment.reset()
         self.total_reward = 0
