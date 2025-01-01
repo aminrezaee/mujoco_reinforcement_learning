@@ -12,7 +12,7 @@ import os
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--iterations", type=int, default=200)
+    parser.add_argument("--iterations", type=int, default=10000)
     parser.add_argument("-i", "--experiment_id", default=-1, type=int)
     parser.add_argument("-n", "--name", default="", type=str)
     args = parser.parse_args()
@@ -21,9 +21,9 @@ def main():
     max_reward = 0
     reward_config = RewardConfig()
     training_config = TrainingConfig(iteration_count=10000, learning_rate=1e-4,
-                                        weight_decay=1e-4, batch_size=1024, epochs_per_iteration=1,
-                                        batches_per_epoch=10, minimum_learning_rate=1e-4)
-    ppo_config = PPOConfig(max_grad_norm=10.0, clip_epsilon=0.1, gamma=0.99, lmbda=0.98,
+                                        weight_decay=1e-4, batch_size=2000, epochs_per_iteration=1,
+                                        batches_per_epoch=5, minimum_learning_rate=1e-4)
+    ppo_config = PPOConfig(max_grad_norm=1.0, clip_epsilon=0.1, gamma=0.99, lmbda=0.98,
                             entropy_eps=1e-2, advantage_scaler=1e+0, normalize_advantage=True,
                             critic_coeffiecient=1.0)
     agent_config = AgentConfig()
