@@ -44,7 +44,7 @@ class PPOAgent(Agent):
                 distributions = [torch.distributions.Normal(mean[i], std[i]) for i in range(batch_size)]
                 action_log_prob = batch['action_log_prob'][:, joint_index]
                 
-                new_action_log_prob = torch.tensor([distributions[i].log_prob(sub_actions[i,joint_index]).sum() for i in range(batch_size)])
+                new_action_log_prob = torch.cat([distributions[i].log_prob(sub_actions[i,joint_index]).sum()[None] for i in range(batch_size)])
                 # critic loss
                 current_state_value = self.get_state_value(batch['current_state'])
                 current_state_value_target = batch['current_state_value_target']

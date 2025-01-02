@@ -15,7 +15,7 @@ class Actor(nn.Module):
         output_mean = self.networks[module_index](x)
         mean = nn.Tanh()(output_mean)
         std = self.actor_logstd[int(module_index*3):int((module_index+1)*3)].exp()
-        return mean , std
+        return mean , torch.repeat_interleave(std[None,:] , x.shape[0] , dim=0)
     
     def act(self, x):
         sub_action_count = Run.instance().agent_config.sub_action_count
