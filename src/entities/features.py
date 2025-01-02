@@ -39,6 +39,8 @@ class AgentConfig:
 @dataclass
 class NetworkConfig:
     input_shape: int
+    output_shape:int
+    output_max_value:float
     activation_class: torch.nn.Module
     use_bias: bool
 

@@ -1,5 +1,5 @@
 from entities.agents.ppo_agent import PPOAgent
-from environments.humanoid.running import EnvironmentHelper
+from src.environments.humanoid.running_dm_control import EnvironmentHelper
 import torch
 from torch.nn import ELU
 from argparse import ArgumentParser
@@ -27,7 +27,7 @@ def main():
                             entropy_eps=1e-2, advantage_scaler=1e+0, normalize_advantage=True,
                             critic_coeffiecient=1.0)
     agent_config = AgentConfig(sub_action_count=1)
-    network_config = NetworkConfig(input_shape=67,activation_class=ELU, use_bias=False)
+    network_config = NetworkConfig(input_shape=376 , output_shape=17 , output_max_value=0.4,activation_class=ELU, use_bias=False)
     environment_config = EnvironmentConfig()
     dynamic_config = DynamicConfig(0, 0, 0)
     results_dir: str = 'outputs/results'
