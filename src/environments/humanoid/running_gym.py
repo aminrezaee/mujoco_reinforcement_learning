@@ -75,6 +75,9 @@ class EnvironmentHelper:
                    log_type=Logger.REWARD_TYPE , print_message=True)
         if visualize:
             self.visualize()
+        Logger.log(f"episode ended with {len(self.memory)} timesteps" , 
+                   episode=Run.instance().dynamic_config.current_episode , 
+                   log_type=Logger.REWARD_TYPE , print_message=True)
         return torch.cat(self.memory , dim=0)
     
     def visualize(self):

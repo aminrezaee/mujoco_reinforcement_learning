@@ -64,12 +64,10 @@ def main():
                        log_type=Logger.REWARD_TYPE, print_message=True)
         Logger.log(f"starting iteration {i}:" , episode=Run.instance().dynamic_config.current_episode , 
                        log_type=Logger.REWARD_TYPE, print_message=True)
-        environment_helper.environment.step
         memory = environment_helper.rollout(agent) # train rollout
         environment_helper.calculate_advantages(memory)
         agent.train(memory)
         visualize = i % 40 == 0
-        environment_helper.set_step_limit(1000)
         environment_helper.rollout(agent, visualize=visualize) # test rollout
         agent.save()
         if environment_helper.total_reward > max_reward:
