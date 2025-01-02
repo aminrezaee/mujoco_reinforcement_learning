@@ -42,7 +42,7 @@ class NetworkBlock(Module):
             layers.append(layer)
             if config["activation"] is not None:
                 layers.append(config["activation"]())
-                layers.append(Dropout(0.1))
+                # layers.append(Dropout(0.1))
             # layers.append(InputNormalization())
             input_shape = out_shape
         # layers.append(Dropout(0.2))

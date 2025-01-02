@@ -7,6 +7,7 @@ from tensordict import TensorDict
 from utils.logger import Logger
 from os import makedirs
 import numpy as np
+from torch.nn.functional import huber_loss
 
 class PPOAgent(Agent):
     def __init__(self):
@@ -51,10 +52,10 @@ class PPOAgent(Agent):
                 # critic loss
                 current_state_value = self.get_state_value(batch['current_state'])
                 current_state_value_target = batch['current_state_value_target']
-                critic_loss:torch.Tensor = (current_state_value - current_state_value_target).pow(2).mean()
+                critic_loss:torch.Tensor = huber_loss(current_state_value , current_state_value_target , reduction='mean')
                 self.critic_optimizer.zero_grad()
                 critic_loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), Run.instance().ppo_config.max_grad_norm)
+                # torch.nn.utils.clip_grad_norm_(self.critic.parameters(), Run.instance().ppo_config.max_grad_norm)
 
                 self.critic_optimizer.step()
                 
@@ -66,7 +67,7 @@ class PPOAgent(Agent):
                 actor_loss:torch.Tensor = -torch.min(surrogate1, surrogate2).mean()
                 self.actor_optimizer.zero_grad()
                 actor_loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.actor.parameters(), Run.instance().ppo_config.max_grad_norm)
+                # torch.nn.utils.clip_grad_norm_(self.actor.parameters(), Run.instance().ppo_config.max_grad_norm)
                 self.actor_optimizer.step()
                 
                 iteration_losses[0].append(actor_loss.item())
