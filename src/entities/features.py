@@ -32,6 +32,7 @@ class EnvironmentConfig:
 
 @dataclass
 class AgentConfig:
+    sub_action_count:int
     pass
 
 

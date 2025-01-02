@@ -26,7 +26,7 @@ def main():
     ppo_config = PPOConfig(max_grad_norm=1.0, clip_epsilon=0.1, gamma=0.99, lmbda=0.98,
                             entropy_eps=1e-2, advantage_scaler=1e+0, normalize_advantage=True,
                             critic_coeffiecient=1.0)
-    agent_config = AgentConfig()
+    agent_config = AgentConfig(sub_action_count=7)
     network_config = NetworkConfig(input_shape=67,activation_class=ELU, use_bias=False)
     environment_config = EnvironmentConfig()
     dynamic_config = DynamicConfig(0, 0, 0)

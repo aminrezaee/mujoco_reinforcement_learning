@@ -49,20 +49,21 @@ class EnvironmentHelper:
     def rollout(self , agent:Agent , visualize:bool=False):
         self.reset()
         next_state = self.get_state()
+        sub_action_count = Run.instance().agent_config.sub_action_count
         while not self.timestep.last():
             current_state = torch.clone(next_state)
             current_state_value = agent.get_state_value(current_state)
-            action , distribution  = agent.act(current_state , return_dist=True)
-            action_log_prob = distribution.log_prob(action).sum()
-            self.timestep = self.step(action)
+            sub_actions , distributions  = agent.act(current_state , return_dist=True)
+            action_log_prob = [distributions[i].log_prob(sub_actions[i]).sum() for i in range(sub_action_count)]
+            self.timestep = self.step(torch.cat(sub_actions , dim=1))
             next_state = self.get_state()
             next_state_value = agent.get_state_value(next_state)
             memory_item = {'current_state':current_state,
                            'current_state_value':current_state_value , 
                            'next_state_value':next_state_value, 
-                           'action':action, 
-                           'action_log_prob':torch.Tensor([[action_log_prob]]).to(current_state.device),
-                           'reward':torch.Tensor([[self.timestep.reward]]).to(current_state.device)}
+                           'action':torch.cat(sub_actions , dim=0)[None,:],
+                           'action_log_prob':torch.tensor(action_log_prob).to(current_state.device)[None,:],
+                           'reward':torch.tensor([[self.timestep.reward]]).to(current_state.device)}
             self.memory.append(TensorDict(memory_item,batch_size=1))
             if visualize:
                 rendered_rgb_image = self.environment.physics.render(height=160, width=240)

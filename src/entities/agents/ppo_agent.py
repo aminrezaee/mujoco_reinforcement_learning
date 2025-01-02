@@ -17,10 +17,11 @@ class PPOAgent(Agent):
         
     def act(self, state:torch.Tensor, return_dist:bool=False) -> torch.Tensor:
         means , stds = self.actor.act(state)
-        distribution = torch.distributions.Normal(means, stds)
-        action = distribution.sample()
+        sub_action_count = Run.instance().agent_config.sub_action_count
+        distributions = [torch.distributions.Normal(means[i], stds[i]) for i in range(sub_action_count)]
+        action = [distributions[i].sample() for i in range(sub_action_count)]
         if return_dist:
-            return action , distribution
+            return action , distributions
         return action
     
     def get_state_value(self, state):
@@ -37,11 +38,13 @@ class PPOAgent(Agent):
                 idx = torch.randperm(len(memory))
                 shuffled_memory = memory[idx]
                 batch = shuffled_memory[:batch_size]
-                action = batch['action']
-                action_log_prob = batch['action_log_prob']
+                sub_actions = batch['action']
                 joint_index = np.random.randint(0,7) # we have 7 joints (each with 3 value)
-                _ , distribution = self.actor(batch['current_state'] , joint_index , return_dist=True)
-                new_action_log_prob = distribution.log_prob(action).sum(dim=1)[:,None]
+                mean , std = self.actor(batch['current_state'] , joint_index)
+                distributions = [torch.distributions.Normal(mean[i], std[i]) for i in range(batch_size)]
+                action_log_prob = batch['action_log_prob'][:, joint_index]
+                
+                new_action_log_prob = torch.tensor([distributions[i].log_prob(sub_actions[i,joint_index]).sum() for i in range(batch_size)])
                 # critic loss
                 current_state_value = self.get_state_value(batch['current_state'])
                 current_state_value_target = batch['current_state_value_target']
@@ -54,7 +57,7 @@ class PPOAgent(Agent):
                 
                 # actor loss
                 advantage = batch['advantage']
-                ratio = (new_action_log_prob - action_log_prob).exp()
+                ratio = (new_action_log_prob - action_log_prob).exp()[:,None]
                 surrogate1 = ratio * advantage
                 surrogate2 = torch.clamp(ratio, 1.0 - Run.instance().ppo_config.clip_epsilon, 1.0 + Run.instance().ppo_config.clip_epsilon) * advantage
                 actor_loss:torch.Tensor = -torch.min(surrogate1, surrogate2).mean()
