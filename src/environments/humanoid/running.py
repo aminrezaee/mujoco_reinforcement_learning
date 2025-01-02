@@ -46,14 +46,14 @@ class EnvironmentHelper:
         return next_data[None,:]
     
     @torch.no_grad
-    def rollout(self , agent:Agent , visualize:bool=False):
+    def rollout(self , agent:Agent , visualize:bool=False , test_phase:bool=False):
         self.reset()
         next_state = self.get_state()
         sub_action_count = Run.instance().agent_config.sub_action_count
         while not self.timestep.last():
             current_state = torch.clone(next_state)
             current_state_value = agent.get_state_value(current_state)
-            sub_actions , distributions  = agent.act(current_state , return_dist=True)
+            sub_actions , distributions  = agent.act(current_state , return_dist=True , test_phase=test_phase)
             action_log_prob = [distributions[i].log_prob(sub_actions[i]).sum() for i in range(sub_action_count)]
             self.timestep = self.step(torch.cat(sub_actions , dim=1))
             next_state = self.get_state()

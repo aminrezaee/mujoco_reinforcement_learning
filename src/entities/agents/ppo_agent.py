@@ -15,11 +15,14 @@ class PPOAgent(Agent):
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=Run.instance().training_config.learning_rate)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=Run.instance().training_config.learning_rate)
         
-    def act(self, state:torch.Tensor, return_dist:bool=False) -> torch.Tensor:
+    def act(self, state:torch.Tensor, return_dist:bool=False , test_phase:bool=False) -> torch.Tensor:
         means , stds = self.actor.act(state)
         sub_action_count = Run.instance().agent_config.sub_action_count
         distributions = [torch.distributions.Normal(means[i], stds[i]) for i in range(sub_action_count)]
-        action = [distributions[i].sample() for i in range(sub_action_count)]
+        if test_phase:
+            action = [means[i] for i in range(sub_action_count)]
+        else:
+            action = [distributions[i].sample() for i in range(sub_action_count)]
         if return_dist:
             return action , distributions
         return action
@@ -39,7 +42,7 @@ class PPOAgent(Agent):
                 shuffled_memory = memory[idx]
                 batch = shuffled_memory[:batch_size]
                 sub_actions = batch['action']
-                joint_index = np.random.randint(0,7) # we have 7 joints (each with 3 value)
+                joint_index = np.random.randint(0,Run.instance().agent_config.sub_action_count)
                 mean , std = self.actor(batch['current_state'] , joint_index)
                 distributions = [torch.distributions.Normal(mean[i], std[i]) for i in range(batch_size)]
                 action_log_prob = batch['action_log_prob'][:, joint_index]

@@ -21,12 +21,12 @@ def main():
     max_reward = 0
     reward_config = RewardConfig()
     training_config = TrainingConfig(iteration_count=10000, learning_rate=1e-4,
-                                        weight_decay=1e-4, batch_size=20, epochs_per_iteration=1,
+                                        weight_decay=1e-4, batch_size=200, epochs_per_iteration=1,
                                         batches_per_epoch=5, minimum_learning_rate=1e-4)
     ppo_config = PPOConfig(max_grad_norm=1.0, clip_epsilon=0.1, gamma=0.99, lmbda=0.98,
                             entropy_eps=1e-2, advantage_scaler=1e+0, normalize_advantage=True,
                             critic_coeffiecient=1.0)
-    agent_config = AgentConfig(sub_action_count=7)
+    agent_config = AgentConfig(sub_action_count=1)
     network_config = NetworkConfig(input_shape=67,activation_class=ELU, use_bias=False)
     environment_config = EnvironmentConfig()
     dynamic_config = DynamicConfig(0, 0, 0)
@@ -63,7 +63,7 @@ def main():
                        log_type=Logger.REWARD_TYPE, print_message=True)
         Logger.log(f"starting iteration {i}:" , episode=Run.instance().dynamic_config.current_episode , 
                        log_type=Logger.REWARD_TYPE, print_message=True)
-        environment_helper.set_step_limit(100)
+        environment_helper.set_step_limit(1000)
         memory = environment_helper.rollout(agent) # train rollout
         environment_helper.calculate_advantages(memory)
         agent.train(memory)
