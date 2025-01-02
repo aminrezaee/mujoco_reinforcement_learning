@@ -28,6 +28,7 @@ class TrainingConfig:
 
 @dataclass
 class EnvironmentConfig:
+    maximum_timesteps:int
     pass
 
 @dataclass

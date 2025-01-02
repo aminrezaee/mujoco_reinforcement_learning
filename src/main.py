@@ -1,5 +1,5 @@
 from entities.agents.ppo_agent import PPOAgent
-from src.environments.humanoid.running_dm_control import EnvironmentHelper
+from environments.humanoid.running_gym import EnvironmentHelper
 import torch
 from torch.nn import ELU
 from argparse import ArgumentParser
@@ -17,7 +17,6 @@ def main():
     parser.add_argument("-n", "--name", default="", type=str)
     args = parser.parse_args()
     experiment_id = int(args.experiment_id)
-    environment_helper = EnvironmentHelper()
     max_reward = 0
     reward_config = RewardConfig()
     training_config = TrainingConfig(iteration_count=10000, learning_rate=1e-4,
@@ -28,7 +27,7 @@ def main():
                             critic_coeffiecient=1.0)
     agent_config = AgentConfig(sub_action_count=1)
     network_config = NetworkConfig(input_shape=376 , output_shape=17 , output_max_value=0.4,activation_class=ELU, use_bias=False)
-    environment_config = EnvironmentConfig()
+    environment_config = EnvironmentConfig(maximum_timesteps=10000)
     dynamic_config = DynamicConfig(0, 0, 0)
     results_dir: str = 'outputs/results'
     experiments_directory = f"{results_dir}/experiments"
@@ -53,9 +52,11 @@ def main():
                 sequence_wise_normalization=True, dtype=torch.float32)
     Logger.log("initialize src directory!", episode=run.dynamic_config.current_episode,
                path=current_experiment_path, log_type=Logger.TRAINING_TYPE)
+    environment_helper = EnvironmentHelper()
     agent = PPOAgent()
     makedirs(f"{Run.instance().experiment_path}/networks/best_results", exist_ok=True)
     makedirs(f"{Run.instance().experiment_path}/visualizations/best_results", exist_ok=True)
+    
     for i in range(args.iterations):
         Logger.log(f"-------------------------" , episode=Run.instance().dynamic_config.current_episode , 
                        log_type=Logger.REWARD_TYPE, print_message=True)
@@ -63,7 +64,7 @@ def main():
                        log_type=Logger.REWARD_TYPE, print_message=True)
         Logger.log(f"starting iteration {i}:" , episode=Run.instance().dynamic_config.current_episode , 
                        log_type=Logger.REWARD_TYPE, print_message=True)
-        environment_helper.set_step_limit(10000)
+        environment_helper.environment.step
         memory = environment_helper.rollout(agent) # train rollout
         environment_helper.calculate_advantages(memory)
         agent.train(memory)
