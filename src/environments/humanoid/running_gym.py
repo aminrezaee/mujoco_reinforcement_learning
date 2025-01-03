@@ -23,7 +23,7 @@ class Timestep:
 class EnvironmentHelper:
 
     def __init__(self):
-        self.environment = gym.make("Humanoid-v4")
+        self.environment = gym.make("Humanoid-v4", render_mode="rgb_array")
         self.total_reward = 0
         self.timestep = Timestep(np.zeros(Run.instance().network_config.input_shape), 0.0, False,
                                  False, {})
@@ -31,7 +31,6 @@ class EnvironmentHelper:
         self.images = []
 
     def reset(self):
-        self.timestep.ovservation, self.timestep.info = self.environment.reset()
         self.timestep.terminated = False
         self.timestep.truncated = False
         self.total_reward = 0
@@ -53,7 +52,7 @@ class EnvironmentHelper:
 
     @torch.no_grad
     def episode(self, agent: Agent, visualize: bool = False, test_phase: bool = False):
-        self.reset()
+        self.timestep.ovservation, self.timestep.info = self.environment.reset()
         next_state = self.get_state()
         sub_action_count = Run.instance().agent_config.sub_action_count
         if self.timestep.terminated or self.timestep.truncated:
@@ -82,7 +81,7 @@ class EnvironmentHelper:
             }
             self.memory.append(TensorDict(memory_item, batch_size=1))
             if visualize:
-                rendered_rgb_image = self.environment.physics.render(height=160, width=240)
+                rendered_rgb_image = self.environment.render()
                 self.images.append(rendered_rgb_image)
         Logger.log(f"total episode reward: {self.total_reward}",
                    episode=Run.instance().dynamic_config.current_episode,
@@ -97,6 +96,7 @@ class EnvironmentHelper:
         return torch.cat(self.memory, dim=0)
 
     def rollout(self, agent: Agent, visualize: bool = False, test_phase: bool = False):
+        self.reset()
         run = Run.instance()
         current_rollout_size = 0
         results = []
