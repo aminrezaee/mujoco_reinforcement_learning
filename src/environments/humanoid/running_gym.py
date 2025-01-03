@@ -10,9 +10,6 @@ import mediapy as media
 from os import makedirs
 import gymnasium as gym
 
-_STAND_HEIGHT = 1.4
-_CONTROL_TIMESTEP = .025
-
 
 @dataclass
 class Timestep:
@@ -94,7 +91,10 @@ class EnvironmentHelper:
 		return torch.cat(self.memory, dim=0)
 
 	def rollout(self, agent: Agent, visualize: bool = False, test_phase: bool = False):
-		return
+		run = Run.instance()
+		current_rollout_size = 0
+		while current_rollout_size < run.environment_config.maximum_timesteps:
+			print("a")
 
 	def visualize(self):
 		run = Run.instance()
