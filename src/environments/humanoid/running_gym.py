@@ -87,16 +87,12 @@ class EnvironmentHelper:
             if visualize:
                 rendered_rgb_image = self.environment.render()
                 self.images.append(rendered_rgb_image)
-        Logger.log(f"total episode reward: {self.total_reward}",
-                   episode=Run.instance().dynamic_config.current_episode,
-                   log_type=Logger.REWARD_TYPE,
-                   print_message=True)
         if visualize:
             self.visualize()
         Logger.log(f"episode ended with {len(self.memory)} timesteps",
                    episode=Run.instance().dynamic_config.current_episode,
                    log_type=Logger.REWARD_TYPE,
-                   print_message=True)
+                   print_message=False)
         return torch.cat(self.memory, dim=0)
 
     def rollout(self, agent: Agent, visualize: bool = False, test_phase: bool = False):
@@ -108,6 +104,10 @@ class EnvironmentHelper:
             episode_memory = self.episode(agent, visualize, test_phase)
             current_rollout_size += len(episode_memory)
             results.append(episode_memory)
+        Logger.log(f"total episode reward: {self.total_reward}",
+                   episode=Run.instance().dynamic_config.current_episode,
+                   log_type=Logger.REWARD_TYPE,
+                   print_message=True)
         return torch.cat(results, dim=0)[:run.environment_config.maximum_timesteps]
 
     def visualize(self):
