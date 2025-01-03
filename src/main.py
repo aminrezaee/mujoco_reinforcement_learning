@@ -21,12 +21,12 @@ def main():
     max_reward = 0
     reward_config = RewardConfig()
     training_config = TrainingConfig(iteration_count=10000,
-                                     learning_rate=1e-4,
+                                     learning_rate=1e-5,
                                      weight_decay=1e-4,
-                                     batch_size=256,
+                                     batch_size=2000,
                                      epochs_per_iteration=1,
                                      batches_per_epoch=5,
-                                     minimum_learning_rate=1e-4)
+                                     minimum_learning_rate=1e-5)
     ppo_config = PPOConfig(max_grad_norm=1.0,
                            clip_epsilon=0.2,
                            gamma=0.99,
@@ -38,10 +38,10 @@ def main():
     agent_config = AgentConfig(sub_action_count=1)
     network_config = NetworkConfig(input_shape=376,
                                    output_shape=17,
-                                   output_max_value=0.4,
+                                   output_max_value=1.0,
                                    activation_class=ELU,
                                    use_bias=False)
-    environment_config = EnvironmentConfig(maximum_timesteps=1000)
+    environment_config = EnvironmentConfig(maximum_timesteps=10000)
     dynamic_config = DynamicConfig(0, 0, 0)
     results_dir: str = 'outputs/results'
     experiments_directory = f"{results_dir}/experiments"

@@ -13,8 +13,8 @@ class Actor(nn.Module):
         config = {
             "final_activation": None,
             "activation": nn.Tanh,
-            "hidden_layer_count": 4,
-            "shapes": [128, 128, 128, 128]
+            "hidden_layer_count": 2,
+            "shapes": [128, 128]
         }
         self.networks = nn.ModuleList([
             create_network(config,

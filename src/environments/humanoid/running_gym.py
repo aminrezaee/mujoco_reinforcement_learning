@@ -100,11 +100,17 @@ class EnvironmentHelper:
         run = Run.instance()
         current_rollout_size = 0
         results = []
+        lengths = []
         while current_rollout_size < run.environment_config.maximum_timesteps:
             episode_memory = self.episode(agent, visualize, test_phase)
             current_rollout_size += len(episode_memory)
+            lengths.append(len(episode_memory))
             results.append(episode_memory)
         Logger.log(f"total episode reward: {self.total_reward}",
+                   episode=Run.instance().dynamic_config.current_episode,
+                   log_type=Logger.REWARD_TYPE,
+                   print_message=True)
+        Logger.log(f"mean episode length: {sum(lengths)/len(lengths)}",
                    episode=Run.instance().dynamic_config.current_episode,
                    log_type=Logger.REWARD_TYPE,
                    print_message=True)
@@ -119,8 +125,8 @@ class EnvironmentHelper:
     @torch.no_grad
     def calculate_advantages(self, memory: TensorDict):
         rewards = memory['reward']
-        # rewards = rewards - rewards.mean()
-        # rewards = rewards/rewards.std()
+        rewards = rewards - rewards.mean()
+        rewards = rewards / rewards.std()
         terminated = memory['terminated']
         done = memory['truncated']
         done[-1] = True
