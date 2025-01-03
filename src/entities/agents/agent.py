@@ -5,20 +5,20 @@ from tensordict import TensorDict
 
 class Agent(ABC):
 
-	def __init__(self):
-		pass
+    def __init__(self):
+        pass
 
-	def act(self, state, return_dist: bool = False):
-		pass
+    def act(self, state, return_dist: bool = False):
+        pass
 
-	def train(self, memory: TensorDict):
-		pass
+    def train(self, memory: TensorDict):
+        pass
 
-	def save(self):
-		pass
+    def save(self):
+        pass
 
-	def load(self):
-		pass
+    def load(self):
+        pass
 
-	def get_state_value(self, state) -> float:
-		pass
+    def get_state_value(self, state) -> float:
+        pass
