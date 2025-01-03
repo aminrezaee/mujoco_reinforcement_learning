@@ -32,6 +32,8 @@ class EnvironmentHelper:
 
     def reset(self):
         self.timestep.ovservation, self.timestep.info = self.environment.reset()
+        self.timestep.terminated = False
+        self.timestep.truncated = False
         self.total_reward = 0
         self.memory = []
         self.images = []
@@ -54,6 +56,8 @@ class EnvironmentHelper:
         self.reset()
         next_state = self.get_state()
         sub_action_count = Run.instance().agent_config.sub_action_count
+        if self.timestep.terminated or self.timestep.truncated:
+            return torch.tensor([])
         while not (self.timestep.terminated or self.timestep.truncated):
             current_state = torch.clone(next_state)
             current_state_value = agent.get_state_value(current_state)
@@ -72,7 +76,9 @@ class EnvironmentHelper:
                 'next_state_value': next_state_value,
                 'action': torch.cat(sub_actions, dim=0)[None, :],
                 'action_log_prob': torch.tensor(action_log_prob).to(current_state.device)[None, :],
-                'reward': torch.tensor([[self.timestep.reward]]).to(current_state.device)
+                'reward': torch.tensor([[self.timestep.reward]]).to(current_state.device),
+                'terminated': self.timestep.terminated,
+                'truncated': self.timestep.truncated
             }
             self.memory.append(TensorDict(memory_item, batch_size=1))
             if visualize:
@@ -93,8 +99,12 @@ class EnvironmentHelper:
     def rollout(self, agent: Agent, visualize: bool = False, test_phase: bool = False):
         run = Run.instance()
         current_rollout_size = 0
+        results = []
         while current_rollout_size < run.environment_config.maximum_timesteps:
-            print("a")
+            episode_memory = self.episode(agent, visualize, test_phase)
+            current_rollout_size += len(episode_memory)
+            results.append(episode_memory)
+        return torch.cat(results, dim=0)[:run.environment_config.maximum_timesteps]
 
     def visualize(self):
         run = Run.instance()
@@ -107,16 +117,16 @@ class EnvironmentHelper:
         rewards = memory['reward']
         # rewards = rewards - rewards.mean()
         # rewards = rewards/rewards.std()
-        done = torch.zeros_like(rewards)
-        done[-1] = 1
-        done = done.to(torch.bool)
+        terminated = memory['terminated']
+        done = memory['truncated']
+        done[-1] = True
         current_state_values = memory['current_state_value']
         next_state_values = memory['next_state_value']
         advantage, value_target = generalized_advantage_estimate(Run.instance().ppo_config.gamma,
                                                                  Run.instance().ppo_config.lmbda,
                                                                  current_state_values,
                                                                  next_state_values, rewards, done,
-                                                                 done)
+                                                                 terminated)
 
         memory['current_state_value_target'] = value_target
         memory['advantage'] = advantage

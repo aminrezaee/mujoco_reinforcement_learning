@@ -41,7 +41,7 @@ def main():
                                    output_max_value=0.4,
                                    activation_class=ELU,
                                    use_bias=False)
-    environment_config = EnvironmentConfig(maximum_timesteps=10000)
+    environment_config = EnvironmentConfig(maximum_timesteps=1000)
     dynamic_config = DynamicConfig(0, 0, 0)
     results_dir: str = 'outputs/results'
     experiments_directory = f"{results_dir}/experiments"
