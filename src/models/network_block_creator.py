@@ -23,7 +23,15 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
 
 class NetworkBlock(Module):
 
-	def __init__(self, config: dict, input_shape, output_shape, normalize_at_the_end: bool, use_bias: bool, use_batchnorm=False, *args, **kwargs) -> None:
+	def __init__(self,
+	             config: dict,
+	             input_shape,
+	             output_shape,
+	             normalize_at_the_end: bool,
+	             use_bias: bool,
+	             use_batchnorm=False,
+	             *args,
+	             **kwargs) -> None:
 		super().__init__(*args, **kwargs)
 		self.use_bias = use_bias
 		self.hidden_layer_count = config["hidden_layer_count"]
@@ -78,5 +86,15 @@ class NetworkBlock(Module):
 		return x_out
 
 
-def create_network(config, input_shape, output_shape, normalize_at_the_end: bool, use_bias, use_batchnorm=False):
-	return NetworkBlock(config, input_shape, output_shape, normalize_at_the_end=normalize_at_the_end, use_bias=use_bias, use_batchnorm=use_batchnorm)
+def create_network(config,
+                   input_shape,
+                   output_shape,
+                   normalize_at_the_end: bool,
+                   use_bias,
+                   use_batchnorm=False):
+	return NetworkBlock(config,
+	                    input_shape,
+	                    output_shape,
+	                    normalize_at_the_end=normalize_at_the_end,
+	                    use_bias=use_bias,
+	                    use_batchnorm=use_batchnorm)

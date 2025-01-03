@@ -24,7 +24,13 @@ class Logger:
 		return f"{file_name}.txt"
 
 	@staticmethod
-	def log(message: str, episode: int, log_type: int, path=None, historical: bool = False, validation: bool = False, print_message=False):
+	def log(message: str,
+	        episode: int,
+	        log_type: int,
+	        path=None,
+	        historical: bool = False,
+	        validation: bool = False,
+	        print_message=False):
 		mode = "a+"
 		if print_message:
 			print(message)

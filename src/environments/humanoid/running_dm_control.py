@@ -16,7 +16,9 @@ _CONTROL_TIMESTEP = .025
 class EnvironmentHelper:
 
 	def __init__(self):
-		self.environment = suite.load(domain_name="humanoid", task_name="run", task_kwargs={"random": 42})
+		self.environment = suite.load(domain_name="humanoid",
+		                              task_name="run",
+		                              task_kwargs={"random": 42})
 		self.spec = self.environment.action_spec()
 		self.timestep = self.environment.reset()
 		self.total_reward = 0
@@ -58,8 +60,12 @@ class EnvironmentHelper:
 		while not self.timestep.last():
 			current_state = torch.clone(next_state)
 			current_state_value = agent.get_state_value(current_state)
-			sub_actions, distributions = agent.act(current_state, return_dist=True, test_phase=test_phase)
-			action_log_prob = [distributions[i].log_prob(sub_actions[i]).sum() for i in range(sub_action_count)]
+			sub_actions, distributions = agent.act(current_state,
+			                                       return_dist=True,
+			                                       test_phase=test_phase)
+			action_log_prob = [
+			    distributions[i].log_prob(sub_actions[i]).sum() for i in range(sub_action_count)
+			]
 			self.timestep = self.step(torch.cat(sub_actions, dim=1))
 			next_state = self.get_state()
 			next_state_value = agent.get_state_value(next_state)
@@ -75,7 +81,10 @@ class EnvironmentHelper:
 			if visualize:
 				rendered_rgb_image = self.environment.physics.render(height=160, width=240)
 				self.images.append(rendered_rgb_image)
-		Logger.log(f"total episode reward: {self.total_reward}", episode=Run.instance().dynamic_config.current_episode, log_type=Logger.REWARD_TYPE, print_message=True)
+		Logger.log(f"total episode reward: {self.total_reward}",
+		           episode=Run.instance().dynamic_config.current_episode,
+		           log_type=Logger.REWARD_TYPE,
+		           print_message=True)
 		if visualize:
 			self.visualize()
 		return torch.cat(self.memory, dim=0)
@@ -96,7 +105,11 @@ class EnvironmentHelper:
 		done = done.to(torch.bool)
 		current_state_values = memory['current_state_value']
 		next_state_values = memory['next_state_value']
-		advantage, value_target = generalized_advantage_estimate(Run.instance().ppo_config.gamma, Run.instance().ppo_config.lmbda, current_state_values, next_state_values, rewards, done, done)
+		advantage, value_target = generalized_advantage_estimate(Run.instance().ppo_config.gamma,
+		                                                         Run.instance().ppo_config.lmbda,
+		                                                         current_state_values,
+		                                                         next_state_values, rewards, done,
+		                                                         done)
 
 		memory['current_state_value_target'] = value_target
 		memory['advantage'] = advantage

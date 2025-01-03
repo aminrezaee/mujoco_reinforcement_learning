@@ -117,12 +117,15 @@ def get_configurations(experiment_path: str) -> Run:
 	configurations['dtype'] = getattr(torch, configurations['dtype'])
 	rewards_config = configurations.pop("rewards_config").values()
 	training_config = configurations.pop('training_config').values()
-	configurations['network_config']['activation_class'] = getattr(torch.nn, configurations['network_config']['activation_class'])
+	configurations['network_config']['activation_class'] = getattr(
+	    torch.nn, configurations['network_config']['activation_class'])
 	network_config = configurations.pop('network_config').values()
 	ppo_config = configurations.pop('ppo_config').values()
 	environment_config = configurations.pop('environment_config').values()
 	agent_config = configurations.pop('agent_config').values()
 	dynamic_config = configurations.pop('dynamic_config').values()
-	run = Run(RewardConfig(*rewards_config), TrainingConfig(*training_config), PPOConfig(*ppo_config), EnvironmentConfig(*environment_config), AgentConfig(*agent_config),
-	          NetworkConfig(*network_config), DynamicConfig(*dynamic_config), *configurations.values())
+	run = Run(RewardConfig(*rewards_config), TrainingConfig(*training_config),
+	          PPOConfig(*ppo_config), EnvironmentConfig(*environment_config),
+	          AgentConfig(*agent_config), NetworkConfig(*network_config),
+	          DynamicConfig(*dynamic_config), *configurations.values())
 	return run
