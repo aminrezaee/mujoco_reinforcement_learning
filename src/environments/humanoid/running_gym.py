@@ -49,7 +49,7 @@ class EnvironmentHelper:
         return next_data[None,:].to(Run.instance().dtype)
     
     @torch.no_grad
-    def rollout(self , agent:Agent , visualize:bool=False , test_phase:bool=False):
+    def episode(self , agent:Agent , visualize:bool=False , test_phase:bool=False):
         self.reset()
         next_state = self.get_state()
         sub_action_count = Run.instance().agent_config.sub_action_count
@@ -79,6 +79,9 @@ class EnvironmentHelper:
                    episode=Run.instance().dynamic_config.current_episode , 
                    log_type=Logger.REWARD_TYPE , print_message=True)
         return torch.cat(self.memory , dim=0)
+    
+    def rollout(self,agent:Agent, visualize:bool=False , test_phase:bool=False):
+        return
     
     def visualize(self):
         run = Run.instance()
