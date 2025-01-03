@@ -23,7 +23,7 @@ def main():
     training_config = TrainingConfig(iteration_count=10000,
                                      learning_rate=1e-4,
                                      weight_decay=1e-4,
-                                     batch_size=2000,
+                                     batch_size=256,
                                      epochs_per_iteration=1,
                                      batches_per_epoch=5,
                                      minimum_learning_rate=1e-4)

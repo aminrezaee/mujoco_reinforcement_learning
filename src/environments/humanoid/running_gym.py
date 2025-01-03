@@ -31,11 +31,14 @@ class EnvironmentHelper:
         self.images = []
 
     def reset(self):
-        self.timestep.terminated = False
-        self.timestep.truncated = False
         self.total_reward = 0
         self.memory = []
         self.images = []
+
+    def reset_environment(self):
+        self.timestep.ovservation, self.timestep.info = self.environment.reset()
+        self.timestep.terminated = False
+        self.timestep.truncated = False
 
     def step(self, action: np.ndarray):
         self.timestep = Timestep(*self.environment.step(action))
@@ -52,9 +55,10 @@ class EnvironmentHelper:
 
     @torch.no_grad
     def episode(self, agent: Agent, visualize: bool = False, test_phase: bool = False):
-        self.timestep.ovservation, self.timestep.info = self.environment.reset()
+        self.reset_environment()
         next_state = self.get_state()
         sub_action_count = Run.instance().agent_config.sub_action_count
+        device = Run.instance().device
         if self.timestep.terminated or self.timestep.truncated:
             return torch.tensor([])
         while not (self.timestep.terminated or self.timestep.truncated):
@@ -74,10 +78,10 @@ class EnvironmentHelper:
                 'current_state_value': current_state_value,
                 'next_state_value': next_state_value,
                 'action': torch.cat(sub_actions, dim=0)[None, :],
-                'action_log_prob': torch.tensor(action_log_prob).to(current_state.device)[None, :],
-                'reward': torch.tensor([[self.timestep.reward]]).to(current_state.device),
-                'terminated': self.timestep.terminated,
-                'truncated': self.timestep.truncated
+                'action_log_prob': torch.tensor(action_log_prob).to(device)[None, :],
+                'reward': torch.tensor([[self.timestep.reward]]).to(device),
+                'terminated': torch.tensor([[self.timestep.terminated]]).to(device),
+                'truncated': torch.tensor([[self.timestep.truncated]]).to(device)
             }
             self.memory.append(TensorDict(memory_item, batch_size=1))
             if visualize:
