@@ -28,16 +28,21 @@ class TrainingConfig:
 
 @dataclass
 class EnvironmentConfig:
+    maximum_timesteps: int
     pass
+
 
 @dataclass
 class AgentConfig:
+    sub_action_count: int
     pass
 
 
 @dataclass
 class NetworkConfig:
     input_shape: int
+    output_shape: int
+    output_max_value: float
     activation_class: torch.nn.Module
     use_bias: bool
 
@@ -120,8 +125,7 @@ def get_configurations(experiment_path: str) -> Run:
     agent_config = configurations.pop('agent_config').values()
     dynamic_config = configurations.pop('dynamic_config').values()
     run = Run(RewardConfig(*rewards_config), TrainingConfig(*training_config),
-              PPOConfig(*ppo_config), EnvironmentConfig(*environment_config), 
-              AgentConfig(*agent_config), NetworkConfig(*network_config), 
-              DynamicConfig(*dynamic_config),
-              *configurations.values())
+              PPOConfig(*ppo_config), EnvironmentConfig(*environment_config),
+              AgentConfig(*agent_config), NetworkConfig(*network_config),
+              DynamicConfig(*dynamic_config), *configurations.values())
     return run
