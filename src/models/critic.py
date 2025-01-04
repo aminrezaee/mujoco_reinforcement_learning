@@ -8,10 +8,10 @@ class Critic(nn.Module):
     def __init__(self):
         super(Critic, self).__init__()
         config = {
-            "final_activation": nn.Tanh,
-            "activation": nn.Tanh,
-            "hidden_layer_count": 4,
-            "shapes": [128, 128, 128, 128]
+            "final_activation": None,
+            "activation": nn.ReLU,
+            "hidden_layer_count": 2,
+            "shapes": [128, 128]
         }
         self.network = create_network(config,
                                       input_shape=Run.instance().network_config.input_shape,
@@ -20,4 +20,6 @@ class Critic(nn.Module):
                                       use_bias=True)
 
     def forward(self, x):
-        return self.network(x)
+        output = self.network(x)
+        # print(x.mean() , x.min() , x.max())
+        return output

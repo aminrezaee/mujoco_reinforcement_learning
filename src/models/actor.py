@@ -40,6 +40,7 @@ class Actor(nn.Module):
         sub_action_count = run.agent_config.sub_action_count
         sub_action_size = int(run.network_config.output_shape / sub_action_count)
         means = [self.networks[i](x)[None, :] for i in range(sub_action_count)]
+        # print(means[0].mean() , means[0].min() , means[0].max())
         stds = [
             self.actor_logstd[int(i * sub_action_size):int((i + 1) *
                                                            sub_action_size)].exp()[None, None, :]
