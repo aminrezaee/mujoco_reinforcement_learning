@@ -46,11 +46,11 @@ class EnvironmentHelper:
 
     def get_state(self) -> torch.Tensor:
         next_data = torch.tensor(self.timestep.ovservation)
-        next_data = next_data - next_data.mean()
-        std = next_data.std()
-        if std == 0:
-            std = 1e-8
-        next_data = next_data / std
+        # next_data = next_data - next_data.mean()
+        # std = next_data.std()
+        # if std == 0:
+        #     std = 1e-8
+        # next_data = next_data / std
         return next_data[None, :].to(Run.instance().dtype)
 
     @torch.no_grad

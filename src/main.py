@@ -30,7 +30,7 @@ def main():
     ppo_config = PPOConfig(max_grad_norm=1.0,
                            clip_epsilon=0.2,
                            gamma=0.99,
-                           lmbda=0.98,
+                           lmbda=0.95,
                            entropy_eps=1e-4,
                            advantage_scaler=1e+0,
                            normalize_advantage=True,

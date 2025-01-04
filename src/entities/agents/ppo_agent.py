@@ -47,8 +47,6 @@ class PPOAgent(Agent):
         epoch_losses = [[], []]
         for _ in range(epochs):
             iteration_losses = [[], []]
-            self.critic_optimizer.zero_grad()
-            self.actor_optimizer.zero_grad()
             for _ in range(batches_per_epoch):
                 idx = torch.randperm(len(memory))
                 shuffled_memory = memory[idx]
@@ -71,10 +69,10 @@ class PPOAgent(Agent):
                 critic_loss: torch.Tensor = huber_loss(current_state_value,
                                                        current_state_value_target,
                                                        reduction='mean')
+                self.critic_optimizer.zero_grad()
                 critic_loss.backward()
-                
-
-                
+                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), Run.instance().ppo_config.max_grad_norm)
+                self.critic_optimizer.step()
 
                 # actor loss
                 advantage = batch['advantage']
@@ -84,14 +82,14 @@ class PPOAgent(Agent):
                 surrogate2 = torch.clamp(ratio, 1.0 - Run.instance().ppo_config.clip_epsilon,
                                          1.0 + Run.instance().ppo_config.clip_epsilon) * advantage
                 actor_loss: torch.Tensor = -torch.min(surrogate1, surrogate2).mean() - total_entropy * Run.instance().ppo_config.entropy_eps
+                self.actor_optimizer.zero_grad()
                 actor_loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.actor.parameters(), Run.instance().ppo_config.max_grad_norm)
+                self.actor_optimizer.step()
 
                 iteration_losses[0].append(actor_loss.item())
                 iteration_losses[1].append(critic_loss.item())
-            torch.nn.utils.clip_grad_norm_(self.critic.parameters(), Run.instance().ppo_config.max_grad_norm)
-            torch.nn.utils.clip_grad_norm_(self.actor.parameters(), Run.instance().ppo_config.max_grad_norm)
-            self.critic_optimizer.step()
-            self.actor_optimizer.step()
+            
             epoch_losses[0].append(sum(iteration_losses[0]) / len(iteration_losses[0]))
             epoch_losses[1].append(sum(iteration_losses[1]) / len(iteration_losses[1]))
         episode_actor_loss = sum(epoch_losses[0]) / len(epoch_losses[0])
