@@ -78,6 +78,7 @@ class PPOAgent(Agent):
                 advantage = batch['advantage']
                 total_entropy = sum([d.entropy().mean() for d in distributions])
                 ratio = (new_action_log_prob - action_log_prob).exp()[:, None]
+                # print(ratio.min() , ratio.max())
                 surrogate1 = ratio * advantage
                 surrogate2 = torch.clamp(ratio, 1.0 - Run.instance().ppo_config.clip_epsilon,
                                          1.0 + Run.instance().ppo_config.clip_epsilon) * advantage
