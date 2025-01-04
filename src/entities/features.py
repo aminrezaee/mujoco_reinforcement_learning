@@ -29,13 +29,12 @@ class TrainingConfig:
 @dataclass
 class EnvironmentConfig:
     maximum_timesteps: int
-    pass
+    num_envs:int
 
 
 @dataclass
 class AgentConfig:
     sub_action_count: int
-    pass
 
 
 @dataclass
