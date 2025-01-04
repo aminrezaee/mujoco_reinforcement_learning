@@ -125,8 +125,6 @@ class EnvironmentHelper:
     @torch.no_grad
     def calculate_advantages(self, memory: TensorDict):
         rewards = memory['reward']
-        rewards = rewards - rewards.mean()
-        rewards = rewards / rewards.std()
         terminated = memory['terminated']
         done = memory['truncated']
         done[-1] = True
@@ -137,6 +135,11 @@ class EnvironmentHelper:
                                                                  current_state_values,
                                                                  next_state_values, rewards, done,
                                                                  terminated)
+        advantage = advantage - advantage.mean()
+        advantage = advantage / advantage.std()
+        
+        value_target = value_target - value_target.mean()
+        value_target = value_target / value_target.std()
 
         memory['current_state_value_target'] = value_target
         memory['advantage'] = advantage

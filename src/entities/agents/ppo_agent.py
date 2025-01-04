@@ -78,11 +78,12 @@ class PPOAgent(Agent):
 
                 # actor loss
                 advantage = batch['advantage']
+                total_entropy = sum([d.entropy().mean() for d in distributions])
                 ratio = (new_action_log_prob - action_log_prob).exp()[:, None]
                 surrogate1 = ratio * advantage
                 surrogate2 = torch.clamp(ratio, 1.0 - Run.instance().ppo_config.clip_epsilon,
                                          1.0 + Run.instance().ppo_config.clip_epsilon) * advantage
-                actor_loss: torch.Tensor = -torch.min(surrogate1, surrogate2).mean()
+                actor_loss: torch.Tensor = -torch.min(surrogate1, surrogate2).mean() - total_entropy * Run.instance().ppo_config.entropy_eps
                 actor_loss.backward()
 
                 iteration_losses[0].append(actor_loss.item())
