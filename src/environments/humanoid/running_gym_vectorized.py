@@ -74,7 +74,7 @@ class EnvironmentHelper:
             sub_actions, _ = agent.act(current_state,
                                                    return_dist=True,
                                                    test_phase=False)
-            ovservation, reward , terminated , truncated , info = self.test_environment.step(torch.cat(sub_actions, dim=0))
+            ovservation, reward , terminated , truncated , info = self.test_environment.step(torch.cat(sub_actions, dim=0).reshape(-1))
             rewards.append(reward)
             if visualize:
                 rendered_rgb_image = self.test_environment.render()
