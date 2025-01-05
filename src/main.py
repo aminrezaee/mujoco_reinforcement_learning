@@ -101,11 +101,11 @@ def main():
         environment_helper.calculate_advantages(memory)
         agent.train(memory)
         visualize = i % 40 == 0
-        environment_helper.rollout(agent, visualize=visualize)  # test rollout
+        mean_rewards = environment_helper.test(agent , visualize)  # test rollout
         agent.save()
-        if environment_helper.total_reward > max_reward:
-            max_reward = environment_helper.total_reward
-            Logger.log(f"max reward changed to: {max_reward}",
+        if mean_rewards > max_reward:
+            max_reward = mean_rewards
+            Logger.log(f"max reward changed to: {mean_rewards}",
                        episode=Run.instance().dynamic_config.current_episode,
                        log_type=Logger.REWARD_TYPE,
                        print_message=True)

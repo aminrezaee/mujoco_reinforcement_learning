@@ -15,10 +15,11 @@ class PPOAgent(Agent):
     def __init__(self):
         self.actor = Actor()
         self.critic = Critic()
+        self.run = Run.instance()
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(),
-                                                lr=Run.instance().training_config.learning_rate)
+                                                lr=self.run.training_config.learning_rate)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(),
-                                                 lr=Run.instance().training_config.learning_rate)
+                                                 lr=self.run.training_config.learning_rate)
 
     def act(self,
             state: torch.Tensor,
@@ -42,16 +43,17 @@ class PPOAgent(Agent):
         return self.critic(state)
 
     def train(self, memory: TensorDict):
-        batch_size = Run.instance().training_config.batch_size
-        batches_per_epoch = Run.instance().training_config.batches_per_epoch
-        epochs = Run.instance().training_config.epochs_per_iteration
+        batch_size = self.run.training_config.batch_size
+        epochs = self.run.training_config.epochs_per_iteration
+        batches_per_epoch = int(self.run.environment_config.maximum_timesteps*self.run.environment_config.num_envs/batch_size)
+        memory = memory.view(-1)
         epoch_losses = [[], []]
         for _ in range(epochs):
             iteration_losses = [[], []]
-            for _ in range(batches_per_epoch):
-                idx = torch.randperm(len(memory))
-                shuffled_memory = memory[idx]
-                batch = shuffled_memory[:batch_size]
+            idx = torch.randperm(len(memory))
+            shuffled_memory = memory[idx]
+            for i in range(batches_per_epoch):    
+                batch = shuffled_memory[int(i*batch_size):int((i+1)*batch_size)]
                 sub_actions = batch['action']
                 joint_index = np.random.randint(0, Run.instance().agent_config.sub_action_count)
                 mean, std = self.actor(batch['current_state'], joint_index)
