@@ -134,8 +134,8 @@ class EnvironmentHelper:
         advantage, value_target = generalized_advantage_estimate(Run.instance().ppo_config.gamma,
                                                                  Run.instance().ppo_config.lmbda,
                                                                  current_state_values,
-                                                                 next_state_values, rewards, done,
-                                                                 terminated)
+                                                                 next_state_values, rewards,terminated, done
+                                                                 )
         advantage = advantage - advantage.mean()
         advantage = advantage / advantage.std()
         
