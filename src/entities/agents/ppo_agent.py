@@ -25,14 +25,15 @@ class PPOAgent(Agent):
             return_dist: bool = False,
             test_phase: bool = False) -> torch.Tensor:
         means, stds = self.actor.act(state)
-        sub_action_count = Run.instance().agent_config.sub_action_count
+        # sub_action_count = Run.instance().agent_config.sub_action_count
+        batch_size = len(state)
         distributions = [
-            torch.distributions.Normal(means[i], stds[i]) for i in range(sub_action_count)
+            torch.distributions.Normal(means[i], stds[i]) for i in range(batch_size)
         ]
         if test_phase:
-            action = [means[i] for i in range(sub_action_count)]
+            action = [means[i] for i in range(batch_size)]
         else:
-            action = [distributions[i].sample() for i in range(sub_action_count)]
+            action = [distributions[i].sample()[None, :] for i in range(batch_size)]
         if return_dist:
             return action, distributions
         return action

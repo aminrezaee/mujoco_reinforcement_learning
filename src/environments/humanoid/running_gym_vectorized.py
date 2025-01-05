@@ -10,7 +10,6 @@ import mediapy as media
 from os import makedirs
 import gymnasium as gym
 
-
 @dataclass
 class Timestep:
     ovservation: np.ndarray
@@ -23,10 +22,10 @@ class Timestep:
 class EnvironmentHelper:
 
     def __init__(self):
-        run = Run.instance()
-        self.environment = gym.vector.make("Humanoid-v4", render_mode="rgb_array" , num_envs=run.environment_config.num_envs)
-        self.total_reward = 0
-        self.timestep = Timestep(np.zeros(run.network_config.input_shape), 0.0, False,
+        self.run = Run.instance()
+        self.environment = gym.vector.make("Humanoid-v4", render_mode="rgb_array" , num_envs=self.run.environment_config.num_envs)
+        self.total_reward = np.zeros(self.run.environment_config.num_envs)
+        self.timestep = Timestep(np.zeros(self.run.network_config.input_shape), 0.0, False,
                                  False, {})
         self.memory = []
         self.images = []
@@ -38,8 +37,8 @@ class EnvironmentHelper:
 
     def reset_environment(self):
         self.timestep.ovservation, self.timestep.info = self.environment.reset()
-        self.timestep.terminated = False
-        self.timestep.truncated = False
+        self.timestep.terminated = np.zeros(self.run.environment_config.num_envs).astype(np.bool_)
+        self.timestep.truncated = np.zeros(self.run.environment_config.num_envs).astype(np.bool_)
 
     def step(self, action: np.ndarray):
         self.timestep = Timestep(*self.environment.step(action))
@@ -52,15 +51,18 @@ class EnvironmentHelper:
         # if std == 0:
         #     std = 1e-8
         # next_data = next_data / std
-        return next_data[None, :].to(Run.instance().dtype)
+        if len(next_data.shape) == 1:
+            next_data = next_data[None , :]
+        return next_data.to(self.run.dtype)
 
     @torch.no_grad
     def episode(self, agent: Agent, visualize: bool = False, test_phase: bool = False):
         self.reset_environment()
         next_state = self.get_state()
-        sub_action_count = Run.instance().agent_config.sub_action_count
-        device = Run.instance().device
-        if self.timestep.terminated or self.timestep.truncated:
+        sub_action_count = self.run.agent_config.sub_action_count
+        batch_size = Run.instance().environment_config.num_envs
+        device = self.run.device
+        if any(self.timestep.truncated):
             return torch.tensor([])
         while not any(self.timestep.truncated):
             current_state = torch.clone(next_state)
@@ -69,57 +71,55 @@ class EnvironmentHelper:
                                                    return_dist=True,
                                                    test_phase=test_phase)
             action_log_prob = [
-                distributions[i].log_prob(sub_actions[i]).sum() for i in range(sub_action_count)
+                distributions[i].log_prob(sub_actions[i]).sum() for i in range(batch_size)
             ]
-            self.step(torch.cat(sub_actions, dim=1).reshape(-1).cpu().numpy())
+            self.step(torch.cat(sub_actions, dim=0))
             next_state = self.get_state()
             next_state_value = agent.get_state_value(next_state)
             memory_item = {
                 'current_state': current_state,
                 'current_state_value': current_state_value,
                 'next_state_value': next_state_value,
-                'action': torch.cat(sub_actions, dim=0)[None, :],
-                'action_log_prob': torch.tensor(action_log_prob).to(device)[None, :],
-                'reward': torch.tensor([[self.timestep.reward]]).to(device),
-                'terminated': torch.tensor([[self.timestep.terminated]]).to(device),
-                'truncated': torch.tensor([[self.timestep.truncated]]).to(device)
+                'action': torch.cat(sub_actions, dim=0),
+                'action_log_prob': torch.tensor(action_log_prob).to(device)[: , None],
+                'reward': torch.tensor(self.timestep.reward)[:, None].to(device),
+                'terminated': torch.tensor(self.timestep.terminated[:, None]).to(device),
+                'truncated': torch.tensor(self.timestep.truncated[:, None]).to(device)
             }
-            self.memory.append(TensorDict(memory_item, batch_size=1))
+            self.memory.append(TensorDict(memory_item, batch_size=batch_size))
             if visualize:
                 rendered_rgb_image = self.environment.render()
                 self.images.append(rendered_rgb_image)
         if visualize:
             self.visualize()
         Logger.log(f"episode ended with {len(self.memory)} timesteps",
-                   episode=Run.instance().dynamic_config.current_episode,
+                   episode=self.run.dynamic_config.current_episode,
                    log_type=Logger.REWARD_TYPE,
                    print_message=False)
         return torch.cat(self.memory, dim=0)
 
     def rollout(self, agent: Agent, visualize: bool = False, test_phase: bool = False):
         self.reset()
-        run = Run.instance()
         current_rollout_size = 0
         results = []
         lengths = []
-        while current_rollout_size < run.environment_config.maximum_timesteps:
+        while current_rollout_size < self.run.environment_config.maximum_timesteps:
             episode_memory = self.episode(agent, visualize, test_phase)
             current_rollout_size += len(episode_memory)
             lengths.append(len(episode_memory))
             results.append(episode_memory)
         Logger.log(f"total episode reward: {self.total_reward}",
-                   episode=Run.instance().dynamic_config.current_episode,
+                   episode=self.run.dynamic_config.current_episode,
                    log_type=Logger.REWARD_TYPE,
                    print_message=True)
         Logger.log(f"mean episode length: {sum(lengths)/len(lengths)}",
-                   episode=Run.instance().dynamic_config.current_episode,
+                   episode=self.run.dynamic_config.current_episode,
                    log_type=Logger.REWARD_TYPE,
                    print_message=True)
-        return torch.cat(results, dim=0)[:run.environment_config.maximum_timesteps]
+        return torch.cat(results, dim=0)[:self.run.environment_config.maximum_timesteps]
 
     def visualize(self):
-        run = Run.instance()
-        path = f"{run.experiment_path}/visualizations/{run.dynamic_config.current_episode}"
+        path = f"{self.run.experiment_path}/visualizations/{self.run.dynamic_config.current_episode}"
         makedirs(path, exist_ok=True)
         media.write_video(f"{path}/video.mp4", self.images, fps=30)
 
@@ -131,8 +131,8 @@ class EnvironmentHelper:
         done[-1] = True
         current_state_values = memory['current_state_value']
         next_state_values = memory['next_state_value']
-        advantage, value_target = generalized_advantage_estimate(Run.instance().ppo_config.gamma,
-                                                                 Run.instance().ppo_config.lmbda,
+        advantage, value_target = generalized_advantage_estimate(self.run.ppo_config.gamma,
+                                                                 self.run.ppo_config.lmbda,
                                                                  current_state_values,
                                                                  next_state_values, rewards,terminated, done
                                                                  )

@@ -1,5 +1,5 @@
 from entities.agents.ppo_agent import PPOAgent
-from environments.humanoid.running_gym import EnvironmentHelper
+from environments.humanoid.running_gym_vectorized import EnvironmentHelper
 import torch
 from torch.nn import ELU
 from argparse import ArgumentParser
@@ -21,7 +21,7 @@ def main():
     max_reward = 0
     reward_config = RewardConfig()
     training_config = TrainingConfig(iteration_count=10000,
-                                     learning_rate=1e-4,
+                                     learning_rate=1e-5,
                                      weight_decay=1e-4,
                                      batch_size=256,
                                      epochs_per_iteration=10,

@@ -9,7 +9,7 @@ class Critic(nn.Module):
         super(Critic, self).__init__()
         config = {
             "final_activation": None,
-            "activation": nn.ELU,
+            "activation": nn.Tanh,
             "hidden_layer_count": 2,
             "shapes": [128, 128]
         }
