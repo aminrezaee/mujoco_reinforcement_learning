@@ -100,7 +100,7 @@ class EnvironmentHelper:
             action_log_prob = [
                 distributions[i].log_prob(sub_actions[i]).sum() for i in range(sub_action_count)
             ]
-            self.step(torch.cat(sub_actions, dim=1).reshape(-1).cpu().numpy())
+            self.step(torch.cat(sub_actions, dim=1).reshape(-1).cpu().numpy() , test_phase)
             next_state = self.get_state()
             next_state_value = agent.get_state_value(next_state)
             memory_item = {
