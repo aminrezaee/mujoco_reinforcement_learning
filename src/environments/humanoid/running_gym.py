@@ -57,7 +57,7 @@ class EnvironmentHelper:
         while not (self.timestep.terminated or self.timestep.truncated):
             current_state = torch.clone(next_state)
             sub_actions, _ = agent.act(current_state, return_dist=True, test_phase=False)
-            self.timestep.observation, reward, terminated, truncated, info = self.test_environment.step(
+            self.timestep.observation, reward, self.timestep.terminated, self.timestep.truncated, info = self.test_environment.step(
                 torch.cat(sub_actions, dim=0).reshape(-1))
             rewards.append(reward)
             next_state = self.get_state()
