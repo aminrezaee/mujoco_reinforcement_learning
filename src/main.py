@@ -1,5 +1,5 @@
 from entities.agents.ppo_agent import PPOAgent
-from environments.humanoid.running_gym_vectorized import EnvironmentHelper
+from environments.humanoid.running_gym import EnvironmentHelper
 import torch
 from torch.nn import ELU
 from argparse import ArgumentParser

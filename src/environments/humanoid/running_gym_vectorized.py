@@ -9,7 +9,7 @@ from torchrl.objectives.value.functional import generalized_advantage_estimate
 import mediapy as media
 from os import makedirs
 import gymnasium as gym
-
+from .running_gym import EnvironmentHelper as Helper
 @dataclass
 class Timestep:
     ovservation: np.ndarray
@@ -19,39 +19,20 @@ class Timestep:
     info: dict
 
 
-class EnvironmentHelper:
+class EnvironmentHelper(Helper):
 
     def __init__(self):
-        self.run = Run.instance()
+        super()
         self.environment = gym.vector.make("Humanoid-v4", render_mode="rgb_array" , num_envs=self.run.environment_config.num_envs)
         self.test_environment = gym.make("Humanoid-v4" , render_mode="rgb_array")
         self.total_reward = np.zeros(self.run.environment_config.num_envs)
         self.timestep = Timestep(np.zeros(self.run.network_config.input_shape), 0.0, False,
                                  False, {})
-        self.memory = []
-        self.images = []
 
     def reset(self):
         self.total_reward = np.zeros(self.run.environment_config.num_envs)
         self.memory = []
         self.images = []
-        
-    def get_using_environment(self , test_phase:bool):
-        using_environment = self.environment
-        if test_phase:
-            using_environment = self.test_environment
-        return using_environment
-
-    def reset_environment(self , test_phase:bool):
-        using_environment = self.get_using_environment(test_phase)
-        self.timestep.ovservation, self.timestep.info = using_environment.reset()
-        self.timestep.terminated = np.zeros(self.run.environment_config.num_envs).astype(np.bool_)
-        self.timestep.truncated = np.zeros(self.run.environment_config.num_envs).astype(np.bool_)
-
-    def step(self, action: np.ndarray , test_phase:bool):
-        using_environment = self.get_using_environment(test_phase)
-        self.timestep = Timestep(*using_environment.step(action))
-        self.total_reward += self.timestep.reward
 
     def get_state(self) -> torch.Tensor:
         next_data = torch.tensor(self.timestep.ovservation)
@@ -64,24 +45,10 @@ class EnvironmentHelper:
             next_data = next_data[None , :]
         return next_data.to(self.run.dtype)
     
-    @torch.no_grad    
-    def test(self , agent:Agent , visualize:bool):
-        rewards = []
-        self.reset_environment(test_phase = True)
-        next_state = self.get_state()
-        for _ in range(self.run.environment_config.maximum_timesteps):
-            current_state = torch.clone(next_state)
-            sub_actions, _ = agent.act(current_state,
-                                                   return_dist=True,
-                                                   test_phase=False)
-            ovservation, reward , terminated , truncated , info = self.test_environment.step(torch.cat(sub_actions, dim=0).reshape(-1))
-            rewards.append(reward)
-            if visualize:
-                rendered_rgb_image = self.test_environment.render()
-                self.images.append(rendered_rgb_image)
-        if visualize:
-            self.visualize()
-        return sum(rewards)/len(rewards)
+    def reset_environment(self, test_phase):
+        super().reset_environment(test_phase)
+        self.timestep.terminated = np.zeros(self.run.environment_config.num_envs).astype(np.bool_)
+        self.timestep.truncated = np.zeros(self.run.environment_config.num_envs).astype(np.bool_)
 
 
     @torch.no_grad
@@ -122,11 +89,6 @@ class EnvironmentHelper:
                    log_type=Logger.REWARD_TYPE,
                    print_message=True)
         return torch.cat(self.memory, dim=1)
-
-    def visualize(self):
-        path = f"{self.run.experiment_path}/visualizations/{self.run.dynamic_config.current_episode}"
-        makedirs(path, exist_ok=True)
-        media.write_video(f"{path}/video.mp4", self.images, fps=30)
 
     @torch.no_grad
     def calculate_advantages(self, memory: TensorDict):

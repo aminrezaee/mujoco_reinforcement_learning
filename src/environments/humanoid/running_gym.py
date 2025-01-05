@@ -23,7 +23,9 @@ class Timestep:
 class EnvironmentHelper:
 
     def __init__(self):
+        self.run = Run.instance()
         self.environment = gym.make("Humanoid-v4", render_mode="rgb_array")
+        self.test_environment = gym.make("Humanoid-v4" , render_mode="rgb_array")
         self.total_reward = 0
         self.timestep = Timestep(np.zeros(Run.instance().network_config.input_shape), 0.0, False,
                                  False, {})
@@ -34,16 +36,44 @@ class EnvironmentHelper:
         self.total_reward = 0
         self.memory = []
         self.images = []
+        
+    def get_using_environment(self , test_phase:bool):
+        using_environment = self.environment
+        if test_phase:
+            using_environment = self.test_environment
+        return using_environment
 
-    def reset_environment(self):
-        self.timestep.ovservation, self.timestep.info = self.environment.reset()
-        self.timestep.terminated = False
+    def reset_environment(self , test_phase:bool):
+        using_environment = self.get_using_environment(test_phase)
+        self.timestep.ovservation, self.timestep.info = using_environment.reset()
+        self.timestep.terminated = False 
         self.timestep.truncated = False
-
-    def step(self, action: np.ndarray):
-        self.timestep = Timestep(*self.environment.step(action))
+    
+    @torch.no_grad    
+    def test(self , agent:Agent , visualize:bool):
+        rewards = []
+        self.reset_environment(test_phase = True)
+        next_state = self.get_state()
+        for _ in range(self.run.environment_config.maximum_timesteps):
+            current_state = torch.clone(next_state)
+            sub_actions, _ = agent.act(current_state,
+                                                   return_dist=True,
+                                                   test_phase=False)
+            ovservation, reward , terminated , truncated , info = self.test_environment.step(torch.cat(sub_actions, dim=0).reshape(-1))
+            rewards.append(reward)
+            if visualize:
+                rendered_rgb_image = self.test_environment.render()
+                self.images.append(rendered_rgb_image)
+        if visualize:
+            self.visualize()
+        return sum(rewards)/len(rewards)
+    
+    def step(self, action: np.ndarray , test_phase:bool):
+        using_environment = self.get_using_environment(test_phase)
+        self.timestep = Timestep(*using_environment.step(action))
         self.total_reward += self.timestep.reward
 
+    
     def get_state(self) -> torch.Tensor:
         next_data = torch.tensor(self.timestep.ovservation)
         # next_data = next_data - next_data.mean()
@@ -55,7 +85,7 @@ class EnvironmentHelper:
 
     @torch.no_grad
     def episode(self, agent: Agent, visualize: bool = False, test_phase: bool = False):
-        self.reset_environment()
+        self.reset_environment(test_phase)
         next_state = self.get_state()
         sub_action_count = Run.instance().agent_config.sub_action_count
         device = Run.instance().device
@@ -115,7 +145,25 @@ class EnvironmentHelper:
                    log_type=Logger.REWARD_TYPE,
                    print_message=True)
         return torch.cat(results, dim=0)[:run.environment_config.maximum_timesteps]
-
+    @torch.no_grad    
+    def test(self , agent:Agent , visualize:bool):
+        rewards = []
+        self.reset_environment(test_phase = True)
+        next_state = self.get_state()
+        for _ in range(self.run.environment_config.maximum_timesteps):
+            current_state = torch.clone(next_state)
+            sub_actions, _ = agent.act(current_state,
+                                                   return_dist=True,
+                                                   test_phase=False)
+            ovservation, reward , terminated , truncated , info = self.test_environment.step(torch.cat(sub_actions, dim=0).reshape(-1))
+            rewards.append(reward)
+            if visualize:
+                rendered_rgb_image = self.test_environment.render()
+                self.images.append(rendered_rgb_image)
+        if visualize:
+            self.visualize()
+        return sum(rewards)/len(rewards)
+    
     def visualize(self):
         run = Run.instance()
         path = f"{run.experiment_path}/visualizations/{run.dynamic_config.current_episode}"

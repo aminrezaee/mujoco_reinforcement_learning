@@ -54,6 +54,8 @@ class PPOAgent(Agent):
             shuffled_memory = memory[idx]
             for i in range(batches_per_epoch):    
                 batch = shuffled_memory[int(i*batch_size):int((i+1)*batch_size)]
+                if len(batch) != batch_size:
+                    continue
                 sub_actions = batch['action']
                 joint_index = np.random.randint(0, Run.instance().agent_config.sub_action_count)
                 mean, std = self.actor(batch['current_state'], joint_index)
