@@ -93,8 +93,8 @@ class PPOAgent(Agent):
                 torch.nn.utils.clip_grad_norm_(self.actor.parameters(), Run.instance().ppo_config.max_grad_norm)
                 self.actor_optimizer.step()
 
-                iteration_losses[0].append(actor_loss.item())
-                iteration_losses[1].append(critic_loss.item())
+                iteration_losses[0].append(actor_loss.detach().item())
+                iteration_losses[1].append(critic_loss.detach().item())
             
             epoch_losses[0].append(sum(iteration_losses[0]) / len(iteration_losses[0]))
             epoch_losses[1].append(sum(iteration_losses[1]) / len(iteration_losses[1]))

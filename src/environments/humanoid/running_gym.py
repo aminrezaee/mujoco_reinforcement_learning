@@ -59,14 +59,14 @@ class EnvironmentHelper:
     def test(self, agent: Agent, visualize: bool):
         rewards = []
         self.reset_environment(test_phase=True)
-        next_state = self.get_state()
+        next_state = self.get_state(test_phase=True)
         while not (self.test_timestep.terminated or self.test_timestep.truncated):
             current_state = torch.clone(next_state)
             sub_actions, _ = agent.act(current_state, return_dist=True, test_phase=False)
-            self.timestep.observation, reward, self.timestep.terminated, self.timestep.truncated, info = self.test_environment.step(
+            self.test_timestep.observation, reward, self.test_timestep.terminated, self.test_timestep.truncated, info = self.test_environment.step(
                 torch.cat(sub_actions, dim=0).reshape(-1))
             rewards.append(reward)
-            next_state = self.get_state()
+            next_state = self.get_state(test_phase=True)
             if visualize:
                 rendered_rgb_image = self.test_environment.render()
                 self.images.append(rendered_rgb_image)
@@ -74,25 +74,28 @@ class EnvironmentHelper:
             self.visualize()
         return sum(rewards) / len(rewards)
 
-    def step(self, action: np.ndarray, test_phase: bool):
-        using_environment = self.get_using_environment(test_phase)
-        self.timestep = Timestep(*using_environment.step(action))
+    def step(self, action: np.ndarray):
+        self.timestep = Timestep(*self.environment.step(action))
         self.rewards.append(self.timestep.reward)
 
-    def get_state(self) -> torch.Tensor:
-        next_data = torch.tensor(self.timestep.observation)
+    def get_state(self , test_phase:bool) -> torch.Tensor:
+        timestep = self.test_timestep if test_phase else self.timestep
+        next_data = torch.tensor(timestep.observation)
         if self.run.normalize_observations:
             next_data = next_data - next_data.mean()
             std = next_data.std()
             if std == 0:
                 std = 1e-8
             next_data = next_data / std
-        return next_data[None, :].to(Run.instance().dtype)
+        next_data = next_data.to(Run.instance().dtype)
+        if test_phase:
+            next_data = next_data[None, :]
+        return next_data
 
     @torch.no_grad
     def episode(self, agent: Agent, visualize: bool = False, test_phase: bool = False):
         self.reset_environment(test_phase)
-        next_state = self.get_state()
+        next_state = self.get_state(test_phase=False)
         sub_action_count = Run.instance().agent_config.sub_action_count
         device = Run.instance().device
         if self.timestep.terminated or self.timestep.truncated:
@@ -106,8 +109,8 @@ class EnvironmentHelper:
             action_log_prob = [
                 distributions[i].log_prob(sub_actions[i]).sum() for i in range(sub_action_count)
             ]
-            self.step(torch.cat(sub_actions, dim=1).reshape(-1).cpu().numpy(), test_phase)
-            next_state = self.get_state()
+            self.step(torch.cat(sub_actions, dim=1).reshape(-1).cpu().numpy())
+            next_state = self.get_state(test_phase=False)
             next_state_value = agent.get_state_value(next_state)
             memory_item = {
                 'current_state': current_state,

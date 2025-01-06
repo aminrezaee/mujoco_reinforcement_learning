@@ -10,7 +10,7 @@ import gymnasium as gym
 from .running_gym import EnvironmentHelper as Helper
 @dataclass
 class Timestep:
-    ovservation: np.ndarray
+    observation: np.ndarray
     reward: np.ndarray
     terminated: np.ndarray
     truncated: np.ndarray
@@ -33,15 +33,12 @@ class EnvironmentHelper(Helper):
         if not test_phase:
             self.timestep.terminated = np.zeros(self.run.environment_config.num_envs).astype(np.bool_)
             self.timestep.truncated = np.zeros(self.run.environment_config.num_envs).astype(np.bool_)
-        
-    def get_state(self):
-        return super().get_state().squeeze()
 
 
     @torch.no_grad
     def rollout(self, agent: Agent):
         self.reset_environment(test_phase = False)
-        next_state = self.get_state()
+        next_state = self.get_state(test_phase=False)
         batch_size = len(next_state)
         device = self.run.device
         for _ in range(self.run.environment_config.maximum_timesteps):
@@ -53,8 +50,8 @@ class EnvironmentHelper(Helper):
             action_log_prob = [
                 distributions[i].log_prob(sub_actions[i]).sum() for i in range(batch_size)
             ]
-            self.step(torch.cat(sub_actions, dim=0), False)
-            next_state = self.get_state()
+            self.step(torch.cat(sub_actions, dim=0))
+            next_state = self.get_state(test_phase=False)
             next_state_value = agent.get_state_value(next_state)
             memory_item = {
                 'current_state': current_state.unsqueeze(-2),
