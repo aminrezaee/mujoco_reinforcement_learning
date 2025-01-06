@@ -12,7 +12,7 @@ class Actor(nn.Module):
         sub_action_count = run.agent_config.sub_action_count
         config = {
             "final_activation": None,
-            "activation": Run.network_config.activation_class,
+            "activation": run.network_config.activation_class,
             "hidden_layer_count": 2,
             "shapes": [128, 128]
         }

@@ -29,6 +29,8 @@ class EnvironmentHelper:
         self.rewards = []
         self.timestep = Timestep(np.zeros(Run.instance().network_config.input_shape), 0.0, False,
                                  False, {})
+        self.test_timestep = Timestep(np.zeros(self.run.network_config.input_shape), 0.0, False,
+                                 False, {})
         self.memory = []
         self.images = []
 
@@ -46,15 +48,19 @@ class EnvironmentHelper:
     def reset_environment(self, test_phase: bool):
         using_environment = self.get_using_environment(test_phase)
         self.timestep.observation, self.timestep.info = using_environment.reset()
-        self.timestep.terminated = False
-        self.timestep.truncated = False
+        if test_phase:
+            self.test_timestep.terminated = False
+            self.test_timestep.truncated = False    
+        else:
+            self.timestep.terminated = False
+            self.timestep.truncated = False
 
     @torch.no_grad
     def test(self, agent: Agent, visualize: bool):
         rewards = []
         self.reset_environment(test_phase=True)
         next_state = self.get_state()
-        while not (self.timestep.terminated or self.timestep.truncated):
+        while not (self.test_timestep.terminated or self.test_timestep.truncated):
             current_state = torch.clone(next_state)
             sub_actions, _ = agent.act(current_state, return_dist=True, test_phase=False)
             self.timestep.observation, reward, self.timestep.terminated, self.timestep.truncated, info = self.test_environment.step(

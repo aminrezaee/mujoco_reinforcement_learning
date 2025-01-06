@@ -6,8 +6,6 @@ import torch
 from tensordict import TensorDict
 from utils.logger import Logger
 from torchrl.objectives.value.functional import generalized_advantage_estimate
-import mediapy as media
-from os import makedirs
 import gymnasium as gym
 from .running_gym import EnvironmentHelper as Helper
 @dataclass
@@ -22,16 +20,22 @@ class Timestep:
 class EnvironmentHelper(Helper):
 
     def __init__(self):
-        super()
+        super(EnvironmentHelper, self).__init__()
         self.environment = gym.vector.make("Humanoid-v4", render_mode="rgb_array" , num_envs=self.run.environment_config.num_envs)
         self.test_environment = gym.make("Humanoid-v4" , render_mode="rgb_array")
-        self.timestep = Timestep(np.zeros(self.run.network_config.input_shape), 0.0, False,
+        self.timestep = Timestep(np.zeros(self.run.network_config.input_shape), 0.0, np.zeros(self.run.environment_config.num_envs).astype(np.bool_),
+                                 np.zeros(self.run.environment_config.num_envs).astype(np.bool_), {})
+        self.test_timestep = Timestep(np.zeros(self.run.network_config.input_shape), 0.0, False,
                                  False, {})
     
     def reset_environment(self, test_phase):
         super().reset_environment(test_phase)
-        self.timestep.terminated = np.zeros(self.run.environment_config.num_envs).astype(np.bool_)
-        self.timestep.truncated = np.zeros(self.run.environment_config.num_envs).astype(np.bool_)
+        if not test_phase:
+            self.timestep.terminated = np.zeros(self.run.environment_config.num_envs).astype(np.bool_)
+            self.timestep.truncated = np.zeros(self.run.environment_config.num_envs).astype(np.bool_)
+        
+    def get_state(self):
+        return super().get_state().squeeze()
 
 
     @torch.no_grad
@@ -76,21 +80,25 @@ class EnvironmentHelper(Helper):
     @torch.no_grad
     def calculate_advantages(self, memory: TensorDict):
         rewards = memory['reward']
+        if self.run.normalize_rewards:
+            rewards = rewards - rewards.mean(dim=1).unsqueeze(1)
+            rewards = rewards / rewards.std(dim=1).unsqueeze(1)
         terminated = memory['terminated']
         done = memory['truncated']
-        done[-1] = True
-        current_state_values = memory['current_state_value']
+        done[:, -1 , 0] = True
+        current_state_values = memory['current_state_value'] 
         next_state_values = memory['next_state_value']
-        advantage, value_target = generalized_advantage_estimate(self.run.ppo_config.gamma,
-                                                                 self.run.ppo_config.lmbda,
+        advantage, value_target = generalized_advantage_estimate(Run.instance().ppo_config.gamma,
+                                                                 Run.instance().ppo_config.lmbda,
                                                                  current_state_values,
-                                                                 next_state_values, rewards,terminated, done
-                                                                 )
-        advantage = advantage - advantage.mean(dim=1).unsqueeze(1)
-        advantage = advantage / advantage.std(dim=1).unsqueeze(1)
-        
-        value_target = value_target - value_target.mean(dim=1).unsqueeze(1)
-        value_target = value_target / value_target.std(dim=1).unsqueeze(1)
+                                                                 next_state_values, rewards,
+                                                                 terminated, done)
+        if self.run.ppo_config.normalize_advantage:
+            advantage = advantage - advantage.mean(dim=1).unsqueeze(1)
+            advantage = advantage / advantage.std(dim=1).unsqueeze(1)
+
+            value_target = value_target - value_target.mean(dim=1).unsqueeze(1)
+            value_target = value_target / value_target.std(dim=1).unsqueeze(1)
 
         memory['current_state_value_target'] = value_target
         memory['advantage'] = advantage

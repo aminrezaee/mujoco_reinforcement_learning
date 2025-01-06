@@ -65,7 +65,7 @@ class PPOAgent(Agent):
                 action_log_prob = batch['action_log_prob'][:, joint_index]
 
                 new_action_log_prob = torch.cat([
-                    distributions[i].log_prob(sub_actions[i, joint_index]).sum()[None]
+                    distributions[i].log_prob(sub_actions[i]).sum()[None]
                     for i in range(batch_size)
                 ])
                 # critic loss
