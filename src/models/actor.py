@@ -12,7 +12,7 @@ class Actor(nn.Module):
         sub_action_count = run.agent_config.sub_action_count
         config = {
             "final_activation": None,
-            "activation": nn.Tanh,
+            "activation": run.network_config.activation_class,
             "hidden_layer_count": 2,
             "shapes": [128, 128]
         }
@@ -35,15 +35,15 @@ class Actor(nn.Module):
                                                                         sub_action_size)].exp()
         return mean, torch.repeat_interleave(std[None, :], x.shape[0], dim=0)
 
-    def act(self, x):
+    def act(self, x:torch.Tensor):
         run = Run.instance()
         sub_action_count = run.agent_config.sub_action_count
         sub_action_size = int(run.network_config.output_shape / sub_action_count)
-        means = [self.networks[i](x)[None, :] for i in range(sub_action_count)]
+        means = [self.networks[i](x) for i in range(sub_action_count)]
         # print(means[0].mean() , means[0].min() , means[0].max())
         stds = [
             self.actor_logstd[int(i * sub_action_size):int((i + 1) *
-                                                           sub_action_size)].exp()[None, None, :]
+                                                           sub_action_size)].exp()[None, :]
             for i in range(sub_action_count)
         ]
-        return torch.cat(means), torch.cat(stds)
+        return torch.cat(means), torch.repeat_interleave(torch.cat(stds,dim=-1) , repeats=len(x) , dim=0).to(run.device)

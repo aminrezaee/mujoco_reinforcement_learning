@@ -15,24 +15,26 @@ class PPOAgent(Agent):
     def __init__(self):
         self.actor = Actor()
         self.critic = Critic()
+        self.run = Run.instance()
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(),
-                                                lr=Run.instance().training_config.learning_rate)
+                                                lr=self.run.training_config.learning_rate)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(),
-                                                 lr=Run.instance().training_config.learning_rate)
+                                                 lr=self.run.training_config.learning_rate)
 
     def act(self,
             state: torch.Tensor,
             return_dist: bool = False,
             test_phase: bool = False) -> torch.Tensor:
         means, stds = self.actor.act(state)
-        sub_action_count = Run.instance().agent_config.sub_action_count
+        # sub_action_count = Run.instance().agent_config.sub_action_count
+        batch_size = len(state)
         distributions = [
-            torch.distributions.Normal(means[i], stds[i]) for i in range(sub_action_count)
+            torch.distributions.Normal(means[i], stds[i]) for i in range(batch_size)
         ]
         if test_phase:
-            action = [means[i] for i in range(sub_action_count)]
+            action = [means[i] for i in range(batch_size)]
         else:
-            action = [distributions[i].sample() for i in range(sub_action_count)]
+            action = [distributions[i].sample()[None, :] for i in range(batch_size)]
         if return_dist:
             return action, distributions
         return action
@@ -41,16 +43,19 @@ class PPOAgent(Agent):
         return self.critic(state)
 
     def train(self, memory: TensorDict):
-        batch_size = Run.instance().training_config.batch_size
-        batches_per_epoch = Run.instance().training_config.batches_per_epoch
-        epochs = Run.instance().training_config.epochs_per_iteration
+        batch_size = self.run.training_config.batch_size
+        epochs = self.run.training_config.epochs_per_iteration
+        batches_per_epoch = int(self.run.environment_config.maximum_timesteps*self.run.environment_config.num_envs/batch_size)
+        memory = memory.view(-1)
         epoch_losses = [[], []]
         for _ in range(epochs):
             iteration_losses = [[], []]
-            for _ in range(batches_per_epoch):
-                idx = torch.randperm(len(memory))
-                shuffled_memory = memory[idx]
-                batch = shuffled_memory[:batch_size]
+            idx = torch.randperm(len(memory))
+            shuffled_memory = memory[idx]
+            for i in range(batches_per_epoch):    
+                batch = shuffled_memory[int(i*batch_size):int((i+1)*batch_size)]
+                if len(batch) != batch_size:
+                    continue
                 sub_actions = batch['action']
                 joint_index = np.random.randint(0, Run.instance().agent_config.sub_action_count)
                 mean, std = self.actor(batch['current_state'], joint_index)
@@ -60,7 +65,7 @@ class PPOAgent(Agent):
                 action_log_prob = batch['action_log_prob'][:, joint_index]
 
                 new_action_log_prob = torch.cat([
-                    distributions[i].log_prob(sub_actions[i, joint_index]).sum()[None]
+                    distributions[i].log_prob(sub_actions[i]).sum()[None]
                     for i in range(batch_size)
                 ])
                 # critic loss
@@ -88,8 +93,8 @@ class PPOAgent(Agent):
                 torch.nn.utils.clip_grad_norm_(self.actor.parameters(), Run.instance().ppo_config.max_grad_norm)
                 self.actor_optimizer.step()
 
-                iteration_losses[0].append(actor_loss.item())
-                iteration_losses[1].append(critic_loss.item())
+                iteration_losses[0].append(actor_loss.detach().item())
+                iteration_losses[1].append(critic_loss.detach().item())
             
             epoch_losses[0].append(sum(iteration_losses[0]) / len(iteration_losses[0]))
             epoch_losses[1].append(sum(iteration_losses[1]) / len(iteration_losses[1]))

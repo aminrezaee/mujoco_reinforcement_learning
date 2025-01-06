@@ -9,7 +9,7 @@ class Critic(nn.Module):
         super(Critic, self).__init__()
         config = {
             "final_activation": None,
-            "activation": nn.ReLU,
+            "activation": Run.instance().network_config.activation_class,
             "hidden_layer_count": 2,
             "shapes": [128, 128]
         }

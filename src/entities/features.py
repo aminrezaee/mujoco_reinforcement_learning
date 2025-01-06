@@ -20,7 +20,6 @@ class TrainingConfig:
     weight_decay: float  # coefficient norm of weights term in loss
     batch_size: float  # for example 0.25 means each batch has size int(0.25 * maximum_timesteps)
     epochs_per_iteration: int  # Number of optimization steps per training iteration
-    batches_per_epoch: int
     minimum_learning_rate: float
     agents_dir: str = './outputs/agents'
     save_per_iteration: int = 10
@@ -29,13 +28,12 @@ class TrainingConfig:
 @dataclass
 class EnvironmentConfig:
     maximum_timesteps: int
-    pass
+    num_envs:int
 
 
 @dataclass
 class AgentConfig:
     sub_action_count: int
-    pass
 
 
 @dataclass

@@ -1,7 +1,7 @@
 from entities.agents.ppo_agent import PPOAgent
-from environments.humanoid.running_gym import EnvironmentHelper
+from environments.humanoid.running_gym_vectorized import EnvironmentHelper
 import torch
-from torch.nn import ELU
+from torch.nn import ELU , Tanh
 from argparse import ArgumentParser
 from utils.logger import Logger
 from utils.io import find_experiment_name
@@ -23,9 +23,8 @@ def main():
     training_config = TrainingConfig(iteration_count=10000,
                                      learning_rate=1e-5,
                                      weight_decay=1e-4,
-                                     batch_size=256,
+                                     batch_size=128,
                                      epochs_per_iteration=10,
-                                     batches_per_epoch=5,
                                      minimum_learning_rate=1e-5)
     ppo_config = PPOConfig(max_grad_norm=1.0,
                            clip_epsilon=0.2,
@@ -39,9 +38,9 @@ def main():
     network_config = NetworkConfig(input_shape=376,
                                    output_shape=17,
                                    output_max_value=1.0,
-                                   activation_class=ELU,
+                                   activation_class=Tanh,
                                    use_bias=False)
-    environment_config = EnvironmentConfig(maximum_timesteps=1000)
+    environment_config = EnvironmentConfig(maximum_timesteps=1000 , num_envs=4)
     dynamic_config = DynamicConfig(0, 0, 0)
     results_dir: str = 'outputs/results'
     experiments_directory = f"{results_dir}/experiments"
@@ -101,15 +100,19 @@ def main():
         environment_helper.calculate_advantages(memory)
         agent.train(memory)
         visualize = i % 40 == 0
-        environment_helper.rollout(agent, visualize=visualize)  # test rollout
+        mean_rewards = environment_helper.test(agent , visualize)  # test rollout
         agent.save()
-        if environment_helper.total_reward > max_reward:
-            max_reward = environment_helper.total_reward
-            Logger.log(f"max reward changed to: {max_reward}",
+        if mean_rewards > max_reward:
+            max_reward = mean_rewards
+            Logger.log(f"max reward changed to: {mean_rewards}",
                        episode=Run.instance().dynamic_config.current_episode,
                        log_type=Logger.REWARD_TYPE,
                        print_message=True)
             add_episode_to_best_results()
+        Logger.log(f"test reward: {mean_rewards}",
+                       episode=Run.instance().dynamic_config.current_episode,
+                       log_type=Logger.REWARD_TYPE,
+                       print_message=True)
         Run.instance().dynamic_config.next_episode()
         removing_epoch = int(i - 10)
 
