@@ -37,6 +37,7 @@ class EnvironmentHelper(Helper):
 
     @torch.no_grad
     def rollout(self, agent: Agent):
+        self.reset()
         self.reset_environment(test_phase = False)
         next_state = self.get_state(test_phase=False)
         batch_size = len(next_state)
