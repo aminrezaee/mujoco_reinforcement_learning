@@ -25,25 +25,8 @@ class EnvironmentHelper(Helper):
         super()
         self.environment = gym.vector.make("Humanoid-v4", render_mode="rgb_array" , num_envs=self.run.environment_config.num_envs)
         self.test_environment = gym.make("Humanoid-v4" , render_mode="rgb_array")
-        self.total_reward = np.zeros(self.run.environment_config.num_envs)
         self.timestep = Timestep(np.zeros(self.run.network_config.input_shape), 0.0, False,
                                  False, {})
-
-    def reset(self):
-        self.total_reward = np.zeros(self.run.environment_config.num_envs)
-        self.memory = []
-        self.images = []
-
-    def get_state(self) -> torch.Tensor:
-        next_data = torch.tensor(self.timestep.ovservation)
-        # next_data = next_data - next_data.mean()
-        # std = next_data.std()
-        # if std == 0:
-        #     std = 1e-8
-        # next_data = next_data / std
-        if len(next_data.shape) == 1:
-            next_data = next_data[None , :]
-        return next_data.to(self.run.dtype)
     
     def reset_environment(self, test_phase):
         super().reset_environment(test_phase)
