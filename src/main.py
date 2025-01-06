@@ -1,7 +1,7 @@
 from entities.agents.ppo_agent import PPOAgent
 from environments.humanoid.running_gym import EnvironmentHelper
 import torch
-from torch.nn import ELU
+from torch.nn import ELU , Tanh
 from argparse import ArgumentParser
 from utils.logger import Logger
 from utils.io import find_experiment_name
@@ -25,7 +25,6 @@ def main():
                                      weight_decay=1e-4,
                                      batch_size=1024,
                                      epochs_per_iteration=10,
-                                     batches_per_epoch=5,
                                      minimum_learning_rate=1e-5)
     ppo_config = PPOConfig(max_grad_norm=1.0,
                            clip_epsilon=0.2,
@@ -39,7 +38,7 @@ def main():
     network_config = NetworkConfig(input_shape=376,
                                    output_shape=17,
                                    output_max_value=1.0,
-                                   activation_class=ELU,
+                                   activation_class=Tanh,
                                    use_bias=False)
     environment_config = EnvironmentConfig(maximum_timesteps=10000 , num_envs=1)
     dynamic_config = DynamicConfig(0, 0, 0)
