@@ -26,14 +26,14 @@ class EnvironmentHelper:
         self.run = Run.instance()
         self.environment = gym.make("Humanoid-v4", render_mode="rgb_array")
         self.test_environment = gym.make("Humanoid-v4", render_mode="rgb_array")
-        self.total_reward = 0
+        self.rewards = []
         self.timestep = Timestep(np.zeros(Run.instance().network_config.input_shape), 0.0, False,
                                  False, {})
         self.memory = []
         self.images = []
 
     def reset(self):
-        self.total_reward = 0
+        self.rewards = []
         self.memory = []
         self.images = []
 
@@ -71,7 +71,7 @@ class EnvironmentHelper:
     def step(self, action: np.ndarray, test_phase: bool):
         using_environment = self.get_using_environment(test_phase)
         self.timestep = Timestep(*using_environment.step(action))
-        self.total_reward += self.timestep.reward
+        self.rewards.append(self.timestep.reward)
 
     def get_state(self) -> torch.Tensor:
         next_data = torch.tensor(self.timestep.observation)
@@ -135,7 +135,7 @@ class EnvironmentHelper:
             current_rollout_size += len(episode_memory)
             lengths.append(len(episode_memory))
             results.append(episode_memory)
-        Logger.log(f"total episode reward: {self.total_reward}",
+        Logger.log(f"total episode reward: {sum(self.rewards)/len(self.rewards)}",
                    episode=Run.instance().dynamic_config.current_episode,
                    log_type=Logger.REWARD_TYPE,
                    print_message=True)

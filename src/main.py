@@ -23,7 +23,7 @@ def main():
     training_config = TrainingConfig(iteration_count=10000,
                                      learning_rate=1e-5,
                                      weight_decay=1e-4,
-                                     batch_size=256,
+                                     batch_size=1024,
                                      epochs_per_iteration=10,
                                      batches_per_epoch=5,
                                      minimum_learning_rate=1e-5)
@@ -41,7 +41,7 @@ def main():
                                    output_max_value=1.0,
                                    activation_class=ELU,
                                    use_bias=False)
-    environment_config = EnvironmentConfig(maximum_timesteps=1000 , num_envs=10)
+    environment_config = EnvironmentConfig(maximum_timesteps=10000 , num_envs=1)
     dynamic_config = DynamicConfig(0, 0, 0)
     results_dir: str = 'outputs/results'
     experiments_directory = f"{results_dir}/experiments"
@@ -110,6 +110,10 @@ def main():
                        log_type=Logger.REWARD_TYPE,
                        print_message=True)
             add_episode_to_best_results()
+        Logger.log(f"test reward: {mean_rewards}",
+                       episode=Run.instance().dynamic_config.current_episode,
+                       log_type=Logger.REWARD_TYPE,
+                       print_message=True)
         Run.instance().dynamic_config.next_episode()
         removing_epoch = int(i - 10)
 
