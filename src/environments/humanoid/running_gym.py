@@ -75,11 +75,12 @@ class EnvironmentHelper:
 
     def get_state(self) -> torch.Tensor:
         next_data = torch.tensor(self.timestep.observation)
-        next_data = next_data - next_data.mean()
-        std = next_data.std()
-        if std == 0:
-            std = 1e-8
-        next_data = next_data / std
+        if self.run.normalize_observations:
+            next_data = next_data - next_data.mean()
+            std = next_data.std()
+            if std == 0:
+                std = 1e-8
+            next_data = next_data / std
         return next_data[None, :].to(Run.instance().dtype)
 
     @torch.no_grad
@@ -154,8 +155,9 @@ class EnvironmentHelper:
     @torch.no_grad
     def calculate_advantages(self, memory: TensorDict):
         rewards = memory['reward']
-        rewards = rewards - rewards.mean()
-        rewards = rewards / rewards.std()
+        if self.run.normalize_rewards:
+            rewards = rewards - rewards.mean()
+            rewards = rewards / rewards.std()
         terminated = memory['terminated']
         done = memory['truncated']
         done[-1] = True
@@ -166,11 +168,12 @@ class EnvironmentHelper:
                                                                  current_state_values,
                                                                  next_state_values, rewards,
                                                                  terminated, done)
-        advantage = advantage - advantage.mean()
-        advantage = advantage / advantage.std()
+        if self.run.ppo_config.normalize_advantage:
+            advantage = advantage - advantage.mean()
+            advantage = advantage / advantage.std()
 
-        value_target = value_target - value_target.mean()
-        value_target = value_target / value_target.std()
+            value_target = value_target - value_target.mean()
+            value_target = value_target / value_target.std()
 
         memory['current_state_value_target'] = value_target
         memory['advantage'] = advantage
