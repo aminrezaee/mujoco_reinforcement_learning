@@ -76,7 +76,9 @@ class EnvironmentHelper(Helper):
             last_timestep = Timestep(
                 *self.test_environment.step(torch.cat(sub_actions, dim=0).reshape(-1)))
             self.shift_observations(test_phase=True)
-            self.test_timestep.observation[:, :, -1] = last_timestep.observation
+            self.test_timestep.terminated = last_timestep.terminated
+            self.test_timestep.truncated = last_timestep.truncated
+            self.test_timestep.observation[:, -1] = last_timestep.observation
             rewards.append(last_timestep.reward)
             next_state = self.get_state(test_phase=True)
             if visualize:
