@@ -1,6 +1,6 @@
 from .agent import Agent
 from entities.features import Run
-from models.actor import Actor
+from models.lstm_actor import LSTMActor as Actor
 from models.critic import Critic
 import torch
 from tensordict import TensorDict
@@ -28,9 +28,7 @@ class PPOAgent(Agent):
         means, stds = self.actor.act(state)
         # sub_action_count = Run.instance().agent_config.sub_action_count
         batch_size = len(state)
-        distributions = [
-            torch.distributions.Normal(means[i], stds[i]) for i in range(batch_size)
-        ]
+        distributions = [torch.distributions.Normal(means[i], stds[i]) for i in range(batch_size)]
         if test_phase:
             action = [means[i] for i in range(batch_size)]
         else:
@@ -45,15 +43,16 @@ class PPOAgent(Agent):
     def train(self, memory: TensorDict):
         batch_size = self.run.training_config.batch_size
         epochs = self.run.training_config.epochs_per_iteration
-        batches_per_epoch = int(self.run.environment_config.maximum_timesteps*self.run.environment_config.num_envs/batch_size)
+        batches_per_epoch = int(self.run.environment_config.maximum_timesteps *
+                                self.run.environment_config.num_envs / batch_size)
         memory = memory.view(-1)
         epoch_losses = [[], []]
         for _ in range(epochs):
             iteration_losses = [[], []]
             idx = torch.randperm(len(memory))
             shuffled_memory = memory[idx]
-            for i in range(batches_per_epoch):    
-                batch = shuffled_memory[int(i*batch_size):int((i+1)*batch_size)]
+            for i in range(batches_per_epoch):
+                batch = shuffled_memory[int(i * batch_size):int((i + 1) * batch_size)]
                 if len(batch) != batch_size:
                     continue
                 sub_actions = batch['action']
@@ -65,8 +64,7 @@ class PPOAgent(Agent):
                 action_log_prob = batch['action_log_prob'][:, joint_index]
 
                 new_action_log_prob = torch.cat([
-                    distributions[i].log_prob(sub_actions[i]).sum()[None]
-                    for i in range(batch_size)
+                    distributions[i].log_prob(sub_actions[i]).sum()[None] for i in range(batch_size)
                 ])
                 # critic loss
                 current_state_value = self.get_state_value(batch['current_state'])
@@ -76,7 +74,8 @@ class PPOAgent(Agent):
                                                        reduction='mean')
                 self.critic_optimizer.zero_grad()
                 critic_loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), Run.instance().ppo_config.max_grad_norm)
+                torch.nn.utils.clip_grad_norm_(self.critic.parameters(),
+                                               Run.instance().ppo_config.max_grad_norm)
                 self.critic_optimizer.step()
 
                 # actor loss
@@ -87,15 +86,17 @@ class PPOAgent(Agent):
                 surrogate1 = ratio * advantage
                 surrogate2 = torch.clamp(ratio, 1.0 - Run.instance().ppo_config.clip_epsilon,
                                          1.0 + Run.instance().ppo_config.clip_epsilon) * advantage
-                actor_loss: torch.Tensor = -torch.min(surrogate1, surrogate2).mean() - total_entropy * Run.instance().ppo_config.entropy_eps
+                actor_loss: torch.Tensor = -torch.min(surrogate1, surrogate2).mean(
+                ) - total_entropy * Run.instance().ppo_config.entropy_eps
                 self.actor_optimizer.zero_grad()
                 actor_loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.actor.parameters(), Run.instance().ppo_config.max_grad_norm)
+                torch.nn.utils.clip_grad_norm_(self.actor.parameters(),
+                                               Run.instance().ppo_config.max_grad_norm)
                 self.actor_optimizer.step()
 
                 iteration_losses[0].append(actor_loss.detach().item())
                 iteration_losses[1].append(critic_loss.detach().item())
-            
+
             epoch_losses[0].append(sum(iteration_losses[0]) / len(iteration_losses[0]))
             epoch_losses[1].append(sum(iteration_losses[1]) / len(iteration_losses[1]))
         episode_actor_loss = sum(epoch_losses[0]) / len(epoch_losses[0])

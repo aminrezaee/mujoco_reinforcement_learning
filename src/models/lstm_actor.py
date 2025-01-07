@@ -7,6 +7,7 @@ import torch
 class LSTMActor(nn.Module):
 
     def __init__(self):
+        super(LSTMActor, self).__init__()
         self.feature_extractor = nn.LSTM(376, 10, dropout=0.1, bidirectional=True)
         run = Run.instance()
         config = {
@@ -27,3 +28,6 @@ class LSTMActor(nn.Module):
         output = self.actor(features)
         std = self.actor_logstd[:run.network_config.output_shape].exp()
         return output, torch.repeat_interleave(std[None, :], x.shape[0], dim=0)
+
+    def act(self, x: torch.Tensor):
+        return self.forward(x)

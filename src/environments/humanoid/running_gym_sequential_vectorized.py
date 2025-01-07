@@ -27,16 +27,18 @@ class EnvironmentHelper(Helper):
                                            num_envs=self.run.environment_config.num_envs)
         self.test_environment = gym.make("Humanoid-v4", render_mode="rgb_array")
         self.timestep = Timestep(
-            np.zeros(
+            np.zeros((
                 self.run.environment_config.num_envs,
                 self.run.network_config.input_shape,
                 self.run.environment_config.window_length,
-            ), 0.0,
+            )), 0.0,
             np.zeros(self.run.environment_config.num_envs).astype(np.bool_),
             np.zeros(self.run.environment_config.num_envs).astype(np.bool_), {})
         self.test_timestep = Timestep(
-            np.zeros(self.run.network_config.input_shape,
-                     self.run.environment_config.window_length), 0.0, False, False, {})
+            np.zeros((
+                self.run.network_config.input_shape,
+                self.run.environment_config.window_length,
+            )), 0.0, False, False, {})
 
     def shift_observations(self, test_phase: bool):
         timestep: Timestep = self.get_using_environment(test_phase).timestep

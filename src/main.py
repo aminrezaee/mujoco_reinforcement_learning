@@ -1,5 +1,5 @@
 from entities.agents.ppo_agent import PPOAgent
-from environments.humanoid.running_gym_vectorized import EnvironmentHelper
+from environments.humanoid.running_gym_sequential_vectorized import EnvironmentHelper
 import torch
 from torch.nn import ELU, Tanh
 from argparse import ArgumentParser
@@ -39,7 +39,7 @@ def main():
                                    output_shape=17,
                                    output_max_value=1.0,
                                    activation_class=Tanh,
-                                   use_bias=False)
+                                   use_bias=True)
     environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=4, window_length=10)
     dynamic_config = DynamicConfig(0, 0, 0)
     results_dir: str = 'outputs/results'

@@ -52,8 +52,10 @@ class EnvironmentHelper:
 
     def reset_environment(self, test_phase: bool):
         using_environment = self.get_using_environment(test_phase)
-        using_environment.timestep.observation, using_environment.timestep.info = using_environment.reset(
-        )
+
+        last_observation, using_environment.timestep.info = using_environment.reset()
+        using_environment.timestep.observation = np.repeat(
+            last_observation[..., None], axis=-1, repeats=self.run.environment_config.window_length)
         if test_phase:
             self.test_timestep.terminated = False
             self.test_timestep.truncated = False
