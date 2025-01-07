@@ -61,6 +61,31 @@ class EnvironmentHelper(Helper):
         environment_timestep.observation[:, :, -1] = last_timestep.observation
         self.rewards.append(self.timestep.reward)
 
+    @torch.no_grad
+    def test(self, agent: Agent, visualize: bool):
+        rewards = []
+        self.reset_environment(test_phase=True)
+        next_state = self.get_state(test_phase=True)
+        while not (self.test_timestep.terminated or self.test_timestep.truncated):
+            current_state = torch.clone(next_state)
+            try:
+                sub_actions, _ = agent.act(current_state, return_dist=True, test_phase=False)
+            except:
+                print("Error in agent act")
+                break
+            last_timestep = Timestep(
+                *self.test_environment.step(torch.cat(sub_actions, dim=0).reshape(-1)))
+            self.shift_observations(test_phase=True)
+            self.test_timestep.observation[:, :, -1] = last_timestep.observation
+            rewards.append(last_timestep.reward)
+            next_state = self.get_state(test_phase=True)
+            if visualize:
+                rendered_rgb_image = self.test_environment.render()
+                self.images.append(rendered_rgb_image)
+        if visualize:
+            self.visualize()
+        return sum(rewards) / len(rewards)
+
     def get_state(self, test_phase: bool) -> torch.Tensor:
         timestep: Timestep = self.get_using_environment(test_phase).timestep
         next_data = torch.tensor(timestep.observation)
