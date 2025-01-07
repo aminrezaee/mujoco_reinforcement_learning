@@ -1,7 +1,7 @@
 from .agent import Agent
 from entities.features import Run
 from models.lstm_actor import LSTMActor as Actor
-from models.critic import Critic
+from models.lstm_critic import LSTMCritic as Critic
 import torch
 from tensordict import TensorDict
 from utils.logger import Logger
@@ -57,7 +57,7 @@ class PPOAgent(Agent):
                     continue
                 sub_actions = batch['action']
                 joint_index = np.random.randint(0, Run.instance().agent_config.sub_action_count)
-                mean, std = self.actor(batch['current_state'], joint_index)
+                mean, std = self.actor(batch['current_state'])
                 distributions = [
                     torch.distributions.Normal(mean[i], std[i]) for i in range(batch_size)
                 ]

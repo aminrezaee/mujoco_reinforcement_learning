@@ -60,7 +60,7 @@ class NetworkBlock(Module):
         self.first_layers = Sequential(*layers)
         self.last_layer = Linear(out_shape, output_shape, bias=self.use_bias)
         with torch.no_grad():
-            self.last_layer = layer_init(self.last_layer , std=0.01)
+            self.last_layer = layer_init(self.last_layer, std=0.01)
             # if self.use_bias:
             #     self.last_layer.bias.fill_(0)
         if config["final_activation"] is not None:

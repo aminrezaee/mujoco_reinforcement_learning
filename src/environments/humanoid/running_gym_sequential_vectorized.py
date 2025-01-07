@@ -103,15 +103,15 @@ class EnvironmentHelper(Helper):
             next_state = self.get_state(test_phase=False)
             next_state_value = agent.get_state_value(next_state)
             memory_item = {
-                'current_state': current_state.unsqueeze(-2),
-                'current_state_value': current_state_value.unsqueeze(-2),
-                'next_state_value': next_state_value.unsqueeze(-2),
-                'action': torch.cat(sub_actions, dim=0).unsqueeze(-2),
-                'action_log_prob': torch.tensor(action_log_prob).to(device)[:, None].unsqueeze(-2),
-                'reward': torch.tensor(self.timestep.reward)[:, None].to(device).unsqueeze(-2),
+                'current_state': current_state.unsqueeze(1),
+                'current_state_value': current_state_value.unsqueeze(1),
+                'next_state_value': next_state_value.unsqueeze(1),
+                'action': torch.cat(sub_actions, dim=0).unsqueeze(1),
+                'action_log_prob': torch.tensor(action_log_prob).to(device)[:, None].unsqueeze(1),
+                'reward': torch.tensor(self.timestep.reward)[:, None].to(device).unsqueeze(1),
                 'terminated': torch.tensor(self.timestep.terminated[:,
-                                                                    None]).to(device).unsqueeze(-2),
-                'truncated': torch.tensor(self.timestep.truncated[:, None]).to(device).unsqueeze(-2)
+                                                                    None]).to(device).unsqueeze(1),
+                'truncated': torch.tensor(self.timestep.truncated[:, None]).to(device).unsqueeze(1)
             }
             self.memory.append(TensorDict(memory_item, batch_size=(batch_size, 1)))
         Logger.log(f"episode ended with {len(self.memory)} timesteps",

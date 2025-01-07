@@ -16,16 +16,20 @@ class LSTMActor(nn.Module):
             "hidden_layer_count": 2,
             "shapes": [128, 128]
         }
-        self.actor = create_network(config, run.network_config.input_shape,
+        self.actor = create_network(config, int(2 * run.network_config.input_shape),
                                     run.network_config.output_shape, False,
                                     run.network_config.use_bias, False)
+        self.actor_logstd = nn.Parameter(torch.zeros(run.network_config.output_shape))
         pass
 
     def forward(self, x):
         run = Run.instance()
         features = self.feature_extractor(x)
-        features = features[:, -1, :]
-        output = self.actor(features)
+        current_timestep_features = features[
+            0][:, :, [0, Run.instance().environment_config.window_length]]
+        current_timestep_features = current_timestep_features.view(
+            current_timestep_features.size(0), -1)
+        output = self.actor(current_timestep_features)
         std = self.actor_logstd[:run.network_config.output_shape].exp()
         return output, torch.repeat_interleave(std[None, :], x.shape[0], dim=0)
 
