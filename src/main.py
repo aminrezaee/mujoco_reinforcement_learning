@@ -1,7 +1,7 @@
 from entities.agents.ppo_agent import PPOAgent
 from environments.humanoid.running_gym_vectorized import EnvironmentHelper
 import torch
-from torch.nn import ELU , Tanh
+from torch.nn import ELU, Tanh
 from argparse import ArgumentParser
 from utils.logger import Logger
 from utils.io import find_experiment_name
@@ -40,7 +40,7 @@ def main():
                                    output_max_value=1.0,
                                    activation_class=Tanh,
                                    use_bias=False)
-    environment_config = EnvironmentConfig(maximum_timesteps=1000 , num_envs=4)
+    environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=4, window_length=10)
     dynamic_config = DynamicConfig(0, 0, 0)
     results_dir: str = 'outputs/results'
     experiments_directory = f"{results_dir}/experiments"
@@ -100,7 +100,7 @@ def main():
         environment_helper.calculate_advantages(memory)
         agent.train(memory)
         visualize = i % 40 == 0
-        mean_rewards = environment_helper.test(agent , visualize)  # test rollout
+        mean_rewards = environment_helper.test(agent, visualize)  # test rollout
         agent.save()
         if mean_rewards > max_reward:
             max_reward = mean_rewards
@@ -110,9 +110,9 @@ def main():
                        print_message=True)
             add_episode_to_best_results()
         Logger.log(f"test reward: {mean_rewards}",
-                       episode=Run.instance().dynamic_config.current_episode,
-                       log_type=Logger.REWARD_TYPE,
-                       print_message=True)
+                   episode=Run.instance().dynamic_config.current_episode,
+                   log_type=Logger.REWARD_TYPE,
+                   print_message=True)
         Run.instance().dynamic_config.next_episode()
         removing_epoch = int(i - 10)
 

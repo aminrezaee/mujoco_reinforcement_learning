@@ -28,7 +28,8 @@ class TrainingConfig:
 @dataclass
 class EnvironmentConfig:
     maximum_timesteps: int
-    num_envs:int
+    num_envs: int
+    window_length: int
 
 
 @dataclass
