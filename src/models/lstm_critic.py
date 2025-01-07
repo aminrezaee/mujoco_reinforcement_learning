@@ -23,7 +23,7 @@ class LSTMCritic(nn.Module):
 
     def forward(self, x):
         features = self.feature_extractor(x)
-        current_timestep_features = features[0][:, 0, :]
+        current_timestep_features = features[0][:, -1, :]
         output = self.network(current_timestep_features)
         # print(x.mean() , x.min() , x.max())
         return output
