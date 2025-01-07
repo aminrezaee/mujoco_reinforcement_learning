@@ -1,0 +1,6 @@
+{
+    "yapf.args": [
+        "--style",
+        ".style.yapf"
+      ]
+}
