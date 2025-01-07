@@ -23,7 +23,7 @@ def main():
     training_config = TrainingConfig(iteration_count=10000,
                                      learning_rate=1e-5,
                                      weight_decay=1e-4,
-                                     batch_size=128,
+                                     batch_size=250,
                                      epochs_per_iteration=10,
                                      minimum_learning_rate=1e-5)
     ppo_config = PPOConfig(max_grad_norm=1.0,
@@ -40,7 +40,7 @@ def main():
                                    output_max_value=1.0,
                                    activation_class=Tanh,
                                    use_bias=True)
-    environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=4, window_length=10)
+    environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=10, window_length=10)
     dynamic_config = DynamicConfig(0, 0, 0)
     results_dir: str = 'outputs/results'
     experiments_directory = f"{results_dir}/experiments"

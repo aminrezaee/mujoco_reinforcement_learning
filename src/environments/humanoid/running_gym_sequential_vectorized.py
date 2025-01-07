@@ -100,6 +100,7 @@ class EnvironmentHelper(Helper):
         next_data = next_data.to(Run.instance().dtype)
         if test_phase:
             next_data = next_data[None, :]
+        next_data = next_data.permute(0, 2, 1)
         return next_data
 
     def reset_environment(self, test_phase):
