@@ -13,7 +13,8 @@ class LSTMCritic(nn.Module):
             "hidden_layer_count": 2,
             "shapes": [128, 128]
         }
-        self.feature_extractor = nn.LSTM(376, 10, dropout=0.1, bidirectional=True, batch_first=True)
+        self.feature_extractor = nn.Sequential(
+            nn.LSTM(376, 10, dropout=0.1, bidirectional=True, batch_first=True))
         self.network = create_network(
             config,
             input_shape=20,  # duo to bidirectional feature extractor
@@ -24,6 +25,8 @@ class LSTMCritic(nn.Module):
     def forward(self, x):
         features = self.feature_extractor(x)
         current_timestep_features = features[0][:, -1, :]
+        current_timestep_features = Run.instance().network_config.activation_class()(
+            current_timestep_features)
         output = self.network(current_timestep_features)
         # print(x.mean() , x.min() , x.max())
         return output

@@ -25,6 +25,8 @@ class LSTMActor(nn.Module):
         run = Run.instance()
         features = self.feature_extractor(x)  # features of shape (batch_size, sequence_length, 20)
         current_timestep_features = features[0][:, -1, :]
+        current_timestep_features = Run.instance().network_config.activation_class()(
+            current_timestep_features)
         output = self.actor(current_timestep_features)
         std = self.actor_logstd[:run.network_config.output_shape].exp()
         return output, torch.repeat_interleave(std[None, :], x.shape[0], dim=0)
