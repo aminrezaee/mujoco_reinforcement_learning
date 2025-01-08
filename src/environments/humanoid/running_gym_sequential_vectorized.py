@@ -92,10 +92,9 @@ class EnvironmentHelper(Helper):
         timestep: Timestep = self.get_using_environment(test_phase).timestep
         next_data = torch.tensor(timestep.observation)
         if self.run.normalize_observations:
-            next_data = next_data - next_data.mean()
-            std = next_data.std()
-            if std == 0:
-                std = 1e-8
+            next_data = next_data - next_data.mean(dim=1).unsqueeze(1)
+            std = next_data.std(dim=1).unsqueeze(1)
+            std[std == 0] = 1e-8
             next_data = next_data / std
         next_data = next_data.to(Run.instance().dtype)
         if test_phase:
