@@ -21,15 +21,15 @@ def main():
     max_reward = 0
     reward_config = RewardConfig()
     training_config = TrainingConfig(iteration_count=10000,
-                                     learning_rate=1e-5,
+                                     learning_rate=1e-4,
                                      weight_decay=1e-4,
                                      batch_size=250,
-                                     epochs_per_iteration=10,
-                                     minimum_learning_rate=1e-5)
+                                     epochs_per_iteration=2,
+                                     minimum_learning_rate=1e-4)
     ppo_config = PPOConfig(max_grad_norm=1.0,
-                           clip_epsilon=0.2,
+                           clip_epsilon=0.1,
                            gamma=0.99,
-                           lmbda=0.95,
+                           lmbda=0.98,
                            entropy_eps=1e-4,
                            advantage_scaler=1e+0,
                            normalize_advantage=True,
@@ -38,7 +38,7 @@ def main():
     network_config = NetworkConfig(input_shape=376,
                                    output_shape=17,
                                    output_max_value=1.0,
-                                   activation_class=Tanh,
+                                   activation_class=ELU,
                                    use_bias=True)
     environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=10, window_length=10)
     dynamic_config = DynamicConfig(0, 0, 0)
@@ -99,7 +99,7 @@ def main():
         memory = environment_helper.rollout(agent)  # train rollout
         environment_helper.calculate_advantages(memory)
         agent.train(memory)
-        visualize = i % 40 == 0
+        visualize = i % 5 == 0
         mean_rewards = environment_helper.test(agent, visualize)  # test rollout
         agent.save()
         if mean_rewards > max_reward:
