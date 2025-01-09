@@ -8,7 +8,11 @@ class LSTMActor(nn.Module):
 
     def __init__(self):
         super(LSTMActor, self).__init__()
-        self.feature_extractor = nn.LSTM(376, 10, dropout=0.1, bidirectional=True, batch_first=True)
+        self.feature_extractor = nn.LSTM(376,
+                                         Run.instance().network_config.latent_size,
+                                         dropout=0.1,
+                                         bidirectional=True,
+                                         batch_first=True)
         run = Run.instance()
         config = {
             "final_activation": None,
@@ -16,8 +20,11 @@ class LSTMActor(nn.Module):
             "hidden_layer_count": 2,
             "shapes": [128, 64]
         }
-        self.actor = create_network(config, 200, run.network_config.output_shape, False,
-                                    run.network_config.use_bias, False)
+        self.actor = create_network(
+            config,
+            int(Run.instance().network_config.latent_size * 2 *
+                Run.instance().environment_config.window_length), run.network_config.output_shape,
+            False, run.network_config.use_bias, False)
         self.actor_logstd = nn.Parameter(torch.zeros(run.network_config.output_shape))
         pass
 

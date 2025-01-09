@@ -8,6 +8,7 @@ from utils.logger import Logger
 from os import makedirs
 import numpy as np
 from torch.nn.functional import huber_loss
+from torch.optim.lr_scheduler import ExponentialLR
 
 
 class PPOAgent(Agent):
@@ -16,10 +17,13 @@ class PPOAgent(Agent):
         self.actor = Actor()
         self.critic = Critic()
         self.run = Run.instance()
+
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(),
                                                 lr=self.run.training_config.learning_rate)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(),
                                                  lr=self.run.training_config.learning_rate)
+        self.actor_scheduler = ExponentialLR(self.actor_optimizer, gamma=0.99)
+        self.critic_scheduler = ExponentialLR(self.critic_optimizer, gamma=0.99)
 
     def act(self,
             state: torch.Tensor,
@@ -101,6 +105,9 @@ class PPOAgent(Agent):
             epoch_losses[1].append(sum(iteration_losses[1]) / len(iteration_losses[1]))
         episode_actor_loss = sum(epoch_losses[0]) / len(epoch_losses[0])
         episode_critic_loss = sum(epoch_losses[1]) / len(epoch_losses[1])
+        if self.run.dynamic_config.current_episode < 250:
+            self.actor_scheduler.step()
+            self.critic_scheduler.step()
         Logger.log(
             f"Actor Loss: {episode_actor_loss} Critic Loss: {episode_critic_loss} Epoch Loss: {episode_actor_loss + episode_critic_loss}",
             episode=Run.instance().dynamic_config.current_episode,

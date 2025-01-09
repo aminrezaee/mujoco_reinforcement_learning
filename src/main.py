@@ -39,6 +39,7 @@ def main():
                                    output_shape=17,
                                    output_max_value=1.0,
                                    activation_class=ELU,
+                                   latent_size=128,
                                    use_bias=True)
     environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=10, window_length=10)
     dynamic_config = DynamicConfig(0, 0, 0)

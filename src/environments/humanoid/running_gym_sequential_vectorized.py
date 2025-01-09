@@ -66,7 +66,8 @@ class EnvironmentHelper(Helper):
         rewards = []
         self.reset_environment(test_phase=True)
         next_state = self.get_state(test_phase=True)
-        while not (self.test_timestep.terminated or self.test_timestep.truncated):
+
+        for _ in range(self.run.environment_config.maximum_timesteps):
             current_state = torch.clone(next_state)
             try:
                 sub_actions, _ = agent.act(current_state, return_dist=True, test_phase=False)
@@ -84,6 +85,8 @@ class EnvironmentHelper(Helper):
             if visualize:
                 rendered_rgb_image = self.test_environment.render()
                 self.images.append(rendered_rgb_image)
+            if self.test_timestep.terminated or self.test_timestep.truncated:
+                self.test_environment.reset()
         if visualize:
             self.visualize()
         return sum(rewards) / len(rewards)
@@ -155,6 +158,7 @@ class EnvironmentHelper(Helper):
     def calculate_advantages(self, memory: TensorDict):
         rewards = memory['reward']
         if self.run.normalize_rewards:
+            # rewards = rewards * 0.1
             rewards = rewards - rewards.mean(dim=1).unsqueeze(1)
             rewards = rewards / rewards.std(dim=1).unsqueeze(1)
         terminated = memory['terminated']
@@ -171,8 +175,8 @@ class EnvironmentHelper(Helper):
             advantage = advantage - advantage.mean(dim=1).unsqueeze(1)
             advantage = advantage / advantage.std(dim=1).unsqueeze(1)
 
-            value_target = value_target - value_target.mean(dim=1).unsqueeze(1)
-            value_target = value_target / value_target.std(dim=1).unsqueeze(1)
+            # value_target = value_target - value_target.mean(dim=1).unsqueeze(1)
+            # value_target = value_target / value_target.std(dim=1).unsqueeze(1)
 
         memory['current_state_value_target'] = value_target
         memory['advantage'] = advantage

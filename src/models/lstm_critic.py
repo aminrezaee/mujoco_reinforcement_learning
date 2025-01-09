@@ -13,11 +13,18 @@ class LSTMCritic(nn.Module):
             "hidden_layer_count": 2,
             "shapes": [128, 64]
         }
+
         self.feature_extractor = nn.Sequential(
-            nn.LSTM(376, 10, dropout=0.1, bidirectional=True, batch_first=True))
+            nn.LSTM(376,
+                    Run.instance().network_config.latent_size,
+                    dropout=0.1,
+                    bidirectional=True,
+                    batch_first=True))
         self.network = create_network(
             config,
-            input_shape=200,  # duo to bidirectional feature extractor
+            input_shape=int(Run.instance().network_config.latent_size * 2 *
+                            Run.instance().environment_config.window_length
+                            ),  # duo to bidirectional feature extractor
             output_shape=1,
             normalize_at_the_end=False,
             use_bias=True)

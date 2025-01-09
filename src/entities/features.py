@@ -43,6 +43,7 @@ class NetworkConfig:
     output_shape: int
     output_max_value: float
     activation_class: torch.nn.Module
+    latent_size: int
     use_bias: bool
 
 
