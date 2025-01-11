@@ -160,7 +160,7 @@ class EnvironmentHelper(Helper):
         if self.run.normalize_rewards:
             # rewards = rewards * 0.1
             rewards = rewards - rewards.mean(dim=1).unsqueeze(1)
-            rewards = rewards / rewards.std(dim=1).unsqueeze(1)
+        #     rewards = rewards / rewards.std(dim=1).unsqueeze(1)
         terminated = memory['terminated']
         done = memory['truncated']
         done[:, -1, 0] = True
@@ -173,9 +173,9 @@ class EnvironmentHelper(Helper):
                                                                  terminated, done)
         if self.run.ppo_config.normalize_advantage:
             advantage = advantage - advantage.mean(dim=1).unsqueeze(1)
-            advantage = advantage / advantage.std(dim=1).unsqueeze(1)
+            # advantage = advantage / advantage.std(dim=1).unsqueeze(1)
 
-            # value_target = value_target - value_target.mean(dim=1).unsqueeze(1)
+            value_target = value_target - value_target.mean(dim=1).unsqueeze(1)
             # value_target = value_target / value_target.std(dim=1).unsqueeze(1)
 
         memory['current_state_value_target'] = value_target

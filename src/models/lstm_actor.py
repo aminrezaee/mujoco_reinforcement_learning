@@ -10,7 +10,7 @@ class LSTMActor(nn.Module):
         super(LSTMActor, self).__init__()
         self.feature_extractor = nn.LSTM(376,
                                          Run.instance().network_config.latent_size,
-                                         dropout=0.1,
+                                         num_layers=1,
                                          bidirectional=True,
                                          batch_first=True)
         run = Run.instance()

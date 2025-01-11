@@ -17,7 +17,6 @@ class LSTMCritic(nn.Module):
         self.feature_extractor = nn.Sequential(
             nn.LSTM(376,
                     Run.instance().network_config.latent_size,
-                    dropout=0.1,
                     bidirectional=True,
                     batch_first=True))
         self.network = create_network(

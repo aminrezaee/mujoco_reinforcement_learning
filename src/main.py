@@ -13,18 +13,18 @@ import os
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--iterations", type=int, default=10000)
+    parser.add_argument("--iterations", type=int, default=100)
     parser.add_argument("-i", "--experiment_id", default=-1, type=int)
     parser.add_argument("-n", "--name", default="", type=str)
     args = parser.parse_args()
     experiment_id = int(args.experiment_id)
     max_reward = 0
     reward_config = RewardConfig()
-    training_config = TrainingConfig(iteration_count=10000,
+    training_config = TrainingConfig(iteration_count=100,
                                      learning_rate=1e-4,
                                      weight_decay=1e-4,
                                      batch_size=250,
-                                     epochs_per_iteration=2,
+                                     epochs_per_iteration=10,
                                      minimum_learning_rate=1e-4)
     ppo_config = PPOConfig(max_grad_norm=1.0,
                            clip_epsilon=0.1,
@@ -41,7 +41,7 @@ def main():
                                    activation_class=ELU,
                                    latent_size=128,
                                    use_bias=True)
-    environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=10, window_length=10)
+    environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=10, window_length=20)
     dynamic_config = DynamicConfig(0, 0, 0)
     results_dir: str = 'outputs/results'
     experiments_directory = f"{results_dir}/experiments"
