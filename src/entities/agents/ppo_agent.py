@@ -5,10 +5,11 @@ from models.lstm_critic import LSTMCritic as Critic
 import torch
 from tensordict import TensorDict
 from utils.logger import Logger
-from os import makedirs
+from os import makedirs, path
 import numpy as np
 from torch.nn.functional import huber_loss
 from torch.optim.lr_scheduler import ExponentialLR
+from utils.io import save_config
 
 
 class PPOAgent(Agent):
@@ -127,28 +128,30 @@ class PPOAgent(Agent):
                    f"{experiment_path}/networks/{current_episode}/actor_optimizer.pth")
         torch.save(self.critic_optimizer.state_dict(),
                    f"{experiment_path}/networks/{current_episode}/critic_optimizer.pth")
+        Run.instance().save()
 
     def load(self):
         experiment_path = Run.instance().experiment_path
         current_episode = Run.instance().dynamic_config.current_episode
-        self.actor_state_dict = torch.load(
-            f"{experiment_path}/networks/{current_episode}/actor.pth")
+        load_path = f"{experiment_path}/networks/{current_episode}"
+        if not path.exists(load_path):
+            load_path = f"{experiment_path}/networks/best_results/{current_episode}"
+        if not path.exists(load_path):
+            raise ValueError("the current iteration does not exist")
+        self.actor_state_dict = torch.load(f"{load_path}/actor.pth")
         self.actor = Actor()
         self.actor.load_state_dict(self.actor_state_dict)
 
-        self.critic_state_dict = torch.load(
-            f"{experiment_path}/networks/{current_episode}/critic.pth")
+        self.critic_state_dict = torch.load(f"{load_path}/critic.pth")
         self.critic = Critic()
         self.critic.load_state_dict(self.critic_state_dict)
 
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(),
                                                 lr=Run.instance().training_config.learning_rate)
-        self.actor_optimizer_state_dict = torch.load(
-            f"{experiment_path}/networks/{current_episode}/actor_optimizer.pth")
+        self.actor_optimizer_state_dict = torch.load(f"{load_path}/actor_optimizer.pth")
         self.actor_optimizer.load_state_dict(self.actor_optimizer_state_dict)
 
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(),
                                                  lr=Run.instance().training_config.learning_rate)
-        self.critic_optimizer_state_dict = torch.load(
-            f"{experiment_path}/networks/{current_episode}/critic_optimizer.pth")
+        self.critic_optimizer_state_dict = torch.load(f"{load_path}/critic_optimizer.pth")
         self.critic_optimizer.load_state_dict(self.critic_optimizer_state_dict)

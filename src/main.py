@@ -18,15 +18,15 @@ def main():
     parser.add_argument("-it", "--resume_iteration", default=-1, type=int)
     parser.add_argument("-n", "--name", default="", type=str)
     args = parser.parse_args()
+    results_dir: str = 'outputs/results'
     experiments_directory = f"{results_dir}/experiments"
     experiment_id = int(args.experiment_id)
-    max_reward = 0
     if args.resume_iteration > 0:
         # resume the experiment
         resume = True
         experiment_name = find_experiment_name(experiment_id, experiments_directory)
         current_experiment_path = f"{experiments_directory}/{experiment_id}_{experiment_name}"
-        run = get_configurations(current_experiment_path)
+        run = Run.get_configurations(current_experiment_path)
         run.dynamic_config.current_episode = int(args.resume_iteration)
     else:
         reward_config = RewardConfig()
@@ -54,8 +54,7 @@ def main():
         environment_config = EnvironmentConfig(maximum_timesteps=1000,
                                                num_envs=10,
                                                window_length=20)
-        dynamic_config = DynamicConfig(0, 0, 0)
-        results_dir: str = 'outputs/results'
+        dynamic_config = DynamicConfig(0, 0, 0, 0)
         makedirs(experiments_directory, exist_ok=True)
         if experiment_id < 0:  # then create a new one
             directories = listdir(experiments_directory)
@@ -90,14 +89,15 @@ def main():
                    episode=run.dynamic_config.current_episode,
                    path=current_experiment_path,
                    log_type=Logger.TRAINING_TYPE)
+        run.save()
     environment_helper = EnvironmentHelper()
     agent = PPOAgent()
     if resume:
         agent.load()
     makedirs(f"{Run.instance().experiment_path}/networks/best_results", exist_ok=True)
     makedirs(f"{Run.instance().experiment_path}/visualizations/best_results", exist_ok=True)
-
-    for i in range(run.training_config.iteration_count):
+    current_episode = Run.instance().dynamic_config.current_episode
+    for i in range(current_episode, run.training_config.iteration_count):
         Logger.log(f"-------------------------",
                    episode=Run.instance().dynamic_config.current_episode,
                    log_type=Logger.REWARD_TYPE,
@@ -116,8 +116,8 @@ def main():
         visualize = i % 5 == 0
         mean_rewards = environment_helper.test(agent, visualize)  # test rollout
         agent.save()
-        if mean_rewards > max_reward:
-            max_reward = mean_rewards
+        if mean_rewards > run.dynamic_config.best_reward:
+            run.dynamic_config.best_reward = mean_rewards
             Logger.log(f"max reward changed to: {mean_rewards}",
                        episode=Run.instance().dynamic_config.current_episode,
                        log_type=Logger.REWARD_TYPE,
