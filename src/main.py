@@ -85,15 +85,16 @@ def main():
                   normalize_observations=True,
                   sequence_wise_normalization=True,
                   dtype=torch.float32)
-        Logger.log("initialize src directory!",
-                   episode=run.dynamic_config.current_episode,
-                   path=current_experiment_path,
-                   log_type=Logger.TRAINING_TYPE)
         run.save()
+    Logger.log("initialize src directory!",
+               episode=run.dynamic_config.current_episode,
+               path=current_experiment_path,
+               log_type=Logger.TRAINING_TYPE)
     environment_helper = EnvironmentHelper()
     agent = PPOAgent()
     if resume:
         agent.load()
+        run.dynamic_config.next_episode()
     makedirs(f"{Run.instance().experiment_path}/networks/best_results", exist_ok=True)
     makedirs(f"{Run.instance().experiment_path}/visualizations/best_results", exist_ok=True)
     current_episode = Run.instance().dynamic_config.current_episode
