@@ -22,8 +22,8 @@ class PPOAgent(Agent):
                                                 lr=self.run.training_config.learning_rate)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(),
                                                  lr=self.run.training_config.learning_rate)
-        self.actor_scheduler = ExponentialLR(self.actor_optimizer, gamma=0.99)
-        self.critic_scheduler = ExponentialLR(self.critic_optimizer, gamma=0.99)
+        self.actor_scheduler = ExponentialLR(self.actor_optimizer, gamma=0.999)
+        self.critic_scheduler = ExponentialLR(self.critic_optimizer, gamma=0.999)
 
     def act(self,
             state: torch.Tensor,
@@ -105,7 +105,7 @@ class PPOAgent(Agent):
             epoch_losses[1].append(sum(iteration_losses[1]) / len(iteration_losses[1]))
         episode_actor_loss = sum(epoch_losses[0]) / len(epoch_losses[0])
         episode_critic_loss = sum(epoch_losses[1]) / len(epoch_losses[1])
-        if self.run.dynamic_config.current_episode < 250:
+        if self.run.dynamic_config.current_episode < 2500:
             self.actor_scheduler.step()
             self.critic_scheduler.step()
         Logger.log(

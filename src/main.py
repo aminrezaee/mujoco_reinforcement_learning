@@ -13,14 +13,14 @@ import os
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--iterations", type=int, default=100)
+    parser.add_argument("--iterations", type=int, default=10000)
     parser.add_argument("-i", "--experiment_id", default=-1, type=int)
     parser.add_argument("-n", "--name", default="", type=str)
     args = parser.parse_args()
     experiment_id = int(args.experiment_id)
     max_reward = 0
     reward_config = RewardConfig()
-    training_config = TrainingConfig(iteration_count=100,
+    training_config = TrainingConfig(iteration_count=args.iterations,
                                      learning_rate=1e-4,
                                      weight_decay=1e-4,
                                      batch_size=250,
@@ -84,7 +84,7 @@ def main():
     makedirs(f"{Run.instance().experiment_path}/networks/best_results", exist_ok=True)
     makedirs(f"{Run.instance().experiment_path}/visualizations/best_results", exist_ok=True)
 
-    for i in range(args.iterations):
+    for i in range(run.training_config.iteration_count):
         Logger.log(f"-------------------------",
                    episode=Run.instance().dynamic_config.current_episode,
                    log_type=Logger.REWARD_TYPE,
