@@ -9,7 +9,6 @@ from os import makedirs, path
 import numpy as np
 from torch.nn.functional import huber_loss
 from torch.optim.lr_scheduler import ExponentialLR
-from utils.io import save_config
 
 
 class PPOAgent(Agent):
