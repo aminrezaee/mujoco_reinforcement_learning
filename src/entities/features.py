@@ -6,6 +6,7 @@ import torch
 
 from utils.io import _get_dict_name, read_json_config
 from utils.type_utils import Singleton
+import json
 
 
 @dataclass
@@ -28,7 +29,8 @@ class TrainingConfig:
 @dataclass
 class EnvironmentConfig:
     maximum_timesteps: int
-    num_envs:int
+    num_envs: int
+    window_length: int
 
 
 @dataclass
@@ -42,6 +44,7 @@ class NetworkConfig:
     output_shape: int
     output_max_value: float
     activation_class: torch.nn.Module
+    latent_size: int
     use_bias: bool
 
 
@@ -50,6 +53,7 @@ class DynamicConfig:
     current_episode: int
     current_episode_timestep: int
     current_timestep: int
+    best_reward: float
 
     def next_episode(self):
         self.current_episode = int(self.current_episode + 1)
@@ -108,22 +112,33 @@ class Run(metaclass=Singleton):
             return list(Run._instances.values())[0]
         return None
 
+    def save(self):
+        configurations = {'run': asdict(self)}
+        configurations["run"]['dtype'] = str(configurations["run"]['dtype']).split(".")[-1]
+        configurations["run"]['network_config']['activation_class'] = configurations["run"][
+            'network_config']['activation_class'].__name__
+        configurations = json.dumps(configurations, indent=4)
+        with open(f"{self.experiment_path}/configurations.json", "w") as configurations_file:
+            configurations_file.writelines(configurations)
+            configurations_file.flush()
+            configurations_file.close()
 
-def get_configurations(experiment_path: str) -> Run:
-    configuration_file_path = f"{experiment_path}/configurations.json"
-    configurations = read_json_config(configuration_file_path)['run']
-    configurations['dtype'] = getattr(torch, configurations['dtype'])
-    rewards_config = configurations.pop("rewards_config").values()
-    training_config = configurations.pop('training_config').values()
-    configurations['network_config']['activation_class'] = getattr(
-        torch.nn, configurations['network_config']['activation_class'])
-    network_config = configurations.pop('network_config').values()
-    ppo_config = configurations.pop('ppo_config').values()
-    environment_config = configurations.pop('environment_config').values()
-    agent_config = configurations.pop('agent_config').values()
-    dynamic_config = configurations.pop('dynamic_config').values()
-    run = Run(RewardConfig(*rewards_config), TrainingConfig(*training_config),
-              PPOConfig(*ppo_config), EnvironmentConfig(*environment_config),
-              AgentConfig(*agent_config), NetworkConfig(*network_config),
-              DynamicConfig(*dynamic_config), *configurations.values())
-    return run
+    @staticmethod
+    def get_configurations(experiment_path: str) -> 'Run':
+        configuration_file_path = f"{experiment_path}/configurations.json"
+        configurations = read_json_config(configuration_file_path)['run']
+        configurations['dtype'] = getattr(torch, configurations['dtype'])
+        rewards_config = configurations.pop("rewards_config").values()
+        training_config = configurations.pop('training_config').values()
+        configurations['network_config']['activation_class'] = getattr(
+            torch.nn, configurations['network_config']['activation_class'])
+        network_config = configurations.pop('network_config').values()
+        ppo_config = configurations.pop('ppo_config').values()
+        environment_config = configurations.pop('environment_config').values()
+        agent_config = configurations.pop('agent_config').values()
+        dynamic_config = configurations.pop('dynamic_config').values()
+        run = Run(RewardConfig(*rewards_config), TrainingConfig(*training_config),
+                  PPOConfig(*ppo_config), EnvironmentConfig(*environment_config),
+                  AgentConfig(*agent_config), NetworkConfig(*network_config),
+                  DynamicConfig(*dynamic_config), *configurations.values())
+        return run

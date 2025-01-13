@@ -8,6 +8,8 @@ from utils.logger import Logger
 from torchrl.objectives.value.functional import generalized_advantage_estimate
 import gymnasium as gym
 from .running_gym import EnvironmentHelper as Helper
+
+
 @dataclass
 class Timestep:
     observation: np.ndarray
@@ -19,26 +21,30 @@ class Timestep:
 
 class EnvironmentHelper(Helper):
 
-    def __init__(self):
-        super(EnvironmentHelper, self).__init__()
-        self.environment = gym.vector.make("Humanoid-v4", render_mode="rgb_array" , num_envs=self.run.environment_config.num_envs)
-        self.test_environment = gym.make("Humanoid-v4" , render_mode="rgb_array")
-        self.timestep = Timestep(np.zeros(self.run.network_config.input_shape), 0.0, np.zeros(self.run.environment_config.num_envs).astype(np.bool_),
-                                 np.zeros(self.run.environment_config.num_envs).astype(np.bool_), {})
+    def initialize(self):
+        self.environment = gym.vector.make("Humanoid-v4",
+                                           render_mode="rgb_array",
+                                           num_envs=self.run.environment_config.num_envs)
+        self.test_environment = gym.make("Humanoid-v4", render_mode="rgb_array")
+        self.timestep = Timestep(np.zeros(self.run.network_config.input_shape), 0.0,
+                                 np.zeros(self.run.environment_config.num_envs).astype(np.bool_),
+                                 np.zeros(self.run.environment_config.num_envs).astype(np.bool_),
+                                 {})
         self.test_timestep = Timestep(np.zeros(self.run.network_config.input_shape), 0.0, False,
-                                 False, {})
-    
+                                      False, {})
+
     def reset_environment(self, test_phase):
         super().reset_environment(test_phase)
         if not test_phase:
-            self.timestep.terminated = np.zeros(self.run.environment_config.num_envs).astype(np.bool_)
-            self.timestep.truncated = np.zeros(self.run.environment_config.num_envs).astype(np.bool_)
-
+            self.timestep.terminated = np.zeros(self.run.environment_config.num_envs).astype(
+                np.bool_)
+            self.timestep.truncated = np.zeros(self.run.environment_config.num_envs).astype(
+                np.bool_)
 
     @torch.no_grad
     def rollout(self, agent: Agent):
         self.reset()
-        self.reset_environment(test_phase = False)
+        self.reset_environment(test_phase=False)
         next_state = self.get_state(test_phase=False)
         batch_size = len(next_state)
         device = self.run.device
@@ -59,12 +65,13 @@ class EnvironmentHelper(Helper):
                 'current_state_value': current_state_value.unsqueeze(-2),
                 'next_state_value': next_state_value.unsqueeze(-2),
                 'action': torch.cat(sub_actions, dim=0).unsqueeze(-2),
-                'action_log_prob': torch.tensor(action_log_prob).to(device)[: , None].unsqueeze(-2),
+                'action_log_prob': torch.tensor(action_log_prob).to(device)[:, None].unsqueeze(-2),
                 'reward': torch.tensor(self.timestep.reward)[:, None].to(device).unsqueeze(-2),
-                'terminated': torch.tensor(self.timestep.terminated[:, None]).to(device).unsqueeze(-2),
+                'terminated': torch.tensor(self.timestep.terminated[:,
+                                                                    None]).to(device).unsqueeze(-2),
                 'truncated': torch.tensor(self.timestep.truncated[:, None]).to(device).unsqueeze(-2)
             }
-            self.memory.append(TensorDict(memory_item, batch_size=(batch_size,1)))
+            self.memory.append(TensorDict(memory_item, batch_size=(batch_size, 1)))
         Logger.log(f"episode ended with {len(self.memory)} timesteps",
                    episode=self.run.dynamic_config.current_episode,
                    log_type=Logger.REWARD_TYPE,
@@ -83,8 +90,8 @@ class EnvironmentHelper(Helper):
             rewards = rewards / rewards.std(dim=1).unsqueeze(1)
         terminated = memory['terminated']
         done = memory['truncated']
-        done[:, -1 , 0] = True
-        current_state_values = memory['current_state_value'] 
+        done[:, -1, 0] = True
+        current_state_values = memory['current_state_value']
         next_state_values = memory['next_state_value']
         advantage, value_target = generalized_advantage_estimate(Run.instance().ppo_config.gamma,
                                                                  Run.instance().ppo_config.lmbda,

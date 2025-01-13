@@ -23,16 +23,21 @@ class Timestep:
 class EnvironmentHelper:
 
     def __init__(self):
+        self.rewards = []
+        self.memory = []
+        self.images = []
         self.run = Run.instance()
+        self.initialize()
+        self.environment.timestep = self.timestep
+        self.test_environment.timestep = self.test_timestep
+
+    def initialize(self):
         self.environment = gym.make("Humanoid-v4", render_mode="rgb_array")
         self.test_environment = gym.make("Humanoid-v4", render_mode="rgb_array")
-        self.rewards = []
         self.timestep = Timestep(np.zeros(Run.instance().network_config.input_shape), 0.0, False,
                                  False, {})
         self.test_timestep = Timestep(np.zeros(self.run.network_config.input_shape), 0.0, False,
-                                 False, {})
-        self.memory = []
-        self.images = []
+                                      False, {})
 
     def reset(self):
         self.rewards = []
@@ -47,13 +52,13 @@ class EnvironmentHelper:
 
     def reset_environment(self, test_phase: bool):
         using_environment = self.get_using_environment(test_phase)
-        self.timestep.observation, self.timestep.info = using_environment.reset()
+
+        last_observation, using_environment.timestep.info = using_environment.reset()
+        using_environment.timestep.observation = np.repeat(
+            last_observation[..., None], axis=-1, repeats=self.run.environment_config.window_length)
         if test_phase:
             self.test_timestep.terminated = False
-            self.test_timestep.truncated = False    
-        else:
-            self.timestep.terminated = False
-            self.timestep.truncated = False
+            self.test_timestep.truncated = False
 
     @torch.no_grad
     def test(self, agent: Agent, visualize: bool):
@@ -78,8 +83,8 @@ class EnvironmentHelper:
         self.timestep = Timestep(*self.environment.step(action))
         self.rewards.append(self.timestep.reward)
 
-    def get_state(self , test_phase:bool) -> torch.Tensor:
-        timestep = self.test_timestep if test_phase else self.timestep
+    def get_state(self, test_phase: bool) -> torch.Tensor:
+        timestep = self.get_using_environment(test_phase).timestep
         next_data = torch.tensor(timestep.observation)
         if self.run.normalize_observations:
             next_data = next_data - next_data.mean()
@@ -93,8 +98,8 @@ class EnvironmentHelper:
         return next_data
 
     @torch.no_grad
-    def episode(self, agent: Agent, visualize: bool = False, test_phase: bool = False):
-        self.reset_environment(test_phase)
+    def episode(self, agent: Agent, visualize: bool = False):
+        self.reset_environment(test_phase=False)
         next_state = self.get_state(test_phase=False)
         sub_action_count = Run.instance().agent_config.sub_action_count
         device = Run.instance().device
@@ -105,7 +110,7 @@ class EnvironmentHelper:
             current_state_value = agent.get_state_value(current_state)
             sub_actions, distributions = agent.act(current_state,
                                                    return_dist=True,
-                                                   test_phase=test_phase)
+                                                   test_phase=False)
             action_log_prob = [
                 distributions[i].log_prob(sub_actions[i]).sum() for i in range(sub_action_count)
             ]
