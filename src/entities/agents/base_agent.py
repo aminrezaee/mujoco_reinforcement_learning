@@ -11,9 +11,6 @@ class BaseAgent(ABC):
     def act(self, state, return_dist: bool = False):
         pass
 
-    def train(self, memory: TensorDict):
-        pass
-
     def save(self):
         pass
 
