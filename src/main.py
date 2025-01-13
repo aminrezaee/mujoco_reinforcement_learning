@@ -6,9 +6,8 @@ from argparse import ArgumentParser
 from utils.logger import Logger
 from utils.io import find_experiment_name
 from entities.features import *
-import shutil
+from entities.algorithms.ppo import PPO
 from os import makedirs, listdir
-import os
 
 
 def main():
@@ -98,8 +97,9 @@ def main():
     makedirs(f"{Run.instance().experiment_path}/networks/best_results", exist_ok=True)
     makedirs(f"{Run.instance().experiment_path}/visualizations/best_results", exist_ok=True)
     current_episode = Run.instance().dynamic_config.current_episode
+    algorithm = PPO(environment_helper, agent)
     for i in range(current_episode, run.training_config.iteration_count):
-        iterate(environment_helper, agent, run, i)
+        algorithm.iterate()
 
 
 if __name__ == "__main__":
