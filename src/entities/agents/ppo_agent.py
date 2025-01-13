@@ -7,7 +7,7 @@ from tensordict import TensorDict
 from utils.logger import Logger
 from os import makedirs, path
 import numpy as np
-from torch.nn.functional import huber_loss
+from torch.nn.functional import huber_loss, mse_loss
 from torch.optim.lr_scheduler import ExponentialLR
 
 
@@ -73,9 +73,9 @@ class PPOAgent(Agent):
                 # critic loss
                 current_state_value = self.get_state_value(batch['current_state'])
                 current_state_value_target = batch['current_state_value_target']
-                critic_loss: torch.Tensor = huber_loss(current_state_value,
-                                                       current_state_value_target,
-                                                       reduction='mean')
+                critic_loss: torch.Tensor = mse_loss(current_state_value,
+                                                     current_state_value_target,
+                                                     reduction='mean')
                 self.critic_optimizer.zero_grad()
                 critic_loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.critic.parameters(),

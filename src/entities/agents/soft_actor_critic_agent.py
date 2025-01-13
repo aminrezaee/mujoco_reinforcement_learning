@@ -7,11 +7,10 @@ from tensordict import TensorDict
 from utils.logger import Logger
 from os import makedirs, path
 import numpy as np
-from torch.nn.functional import huber_loss
 from torch.optim.lr_scheduler import ExponentialLR
 
 
-class PPOAgent(Agent):
+class SoftActorCriticAgent(Agent):
 
     def __init__(self):
         self.actor = Actor()
@@ -29,7 +28,17 @@ class PPOAgent(Agent):
             state: torch.Tensor,
             return_dist: bool = False,
             test_phase: bool = False) -> torch.Tensor:
-        pass
+        means, stds = self.actor.act(state)
+        # sub_action_count = Run.instance().agent_config.sub_action_count
+        batch_size = len(state)
+        distributions = [torch.distributions.Normal(means[i], stds[i]) for i in range(batch_size)]
+        if test_phase:
+            action = [means[i] for i in range(batch_size)]
+        else:
+            action = [distributions[i].sample()[None, :] for i in range(batch_size)]
+        if return_dist:
+            return action, distributions
+        return action
 
     def get_state_value(self, state):
         pass
