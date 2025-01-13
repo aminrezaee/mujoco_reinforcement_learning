@@ -1,7 +1,7 @@
-from entities.agents.ppo_agent import PPOAgent
+from src.entities.agents.lstm_agent import LSTMAgent
 from environments.humanoid.running_gym_sequential_vectorized import EnvironmentHelper
 import torch
-from torch.nn import ELU, Tanh
+from torch.nn import ELU
 from argparse import ArgumentParser
 from utils.logger import Logger
 from utils.io import find_experiment_name

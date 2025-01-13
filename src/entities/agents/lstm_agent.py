@@ -3,14 +3,10 @@ from entities.features import Run
 from models.lstm_actor import LSTMActor as Actor
 from models.lstm_critic import LSTMCritic as Critic
 import torch
-from tensordict import TensorDict
-from utils.logger import Logger
-from os import makedirs, path
-import numpy as np
 from torch.optim.lr_scheduler import ExponentialLR
 
 
-class SoftActorCriticAgent(Agent):
+class LSTMAgent(Agent):
 
     def __init__(self):
         self.actor = Actor()
@@ -41,7 +37,4 @@ class SoftActorCriticAgent(Agent):
         return action
 
     def get_state_value(self, state):
-        pass
-
-    def train(self, memory: TensorDict):
-        pass
+        return self.critic(state)
