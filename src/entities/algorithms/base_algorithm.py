@@ -16,3 +16,6 @@ class Algorithm(ABC):
 
     def train(self, memory: TensorDict):
         pass
+
+    def iterate(self):
+        pass
