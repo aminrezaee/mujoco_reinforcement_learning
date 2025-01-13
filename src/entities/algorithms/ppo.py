@@ -185,37 +185,7 @@ class PPO(Algorithm):
             print_message=True)
         pass
 
-    def iterate(self):
-        run = self.environment_helper.run
-        Logger.log(f"-------------------------",
-                   episode=run.dynamic_config.current_episode,
-                   log_type=Logger.REWARD_TYPE,
-                   print_message=True)
-        Logger.log(f"-------------------------",
-                   episode=run.dynamic_config.current_episode,
-                   log_type=Logger.REWARD_TYPE,
-                   print_message=True)
-        Logger.log(f"starting iteration {run.dynamic_config.current_episode}:",
-                   episode=run.dynamic_config.current_episode,
-                   log_type=Logger.REWARD_TYPE,
-                   print_message=True)
+    def _iterate(self):
         memory = self.rollout(self.agent)  # train rollout
         self.calculate_advantages(memory)
         self.train(memory)
-        visualize = run.dynamic_config.current_episode % 5 == 0
-        mean_rewards = self.test(visualize)  # test rollout
-        self.agent.save()
-        if mean_rewards > run.dynamic_config.best_reward:
-            self.environment_helper.run.dynamic_config.best_reward = mean_rewards
-            Logger.log(f"max reward changed to: {mean_rewards}",
-                       episode=run.dynamic_config.current_episode,
-                       log_type=Logger.REWARD_TYPE,
-                       print_message=True)
-            add_episode_to_best_results(run.experiment_path, run.dynamic_config.current_episode)
-        Logger.log(f"test reward: {mean_rewards}",
-                   episode=run.dynamic_config.current_episode,
-                   log_type=Logger.REWARD_TYPE,
-                   print_message=True)
-        run.dynamic_config.next_episode()
-        removing_epoch = int(run.dynamic_config.current_episode - 10)
-        remove_epoch_results(run.experiment_path, removing_epoch)
