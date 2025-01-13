@@ -91,7 +91,7 @@ def main():
                log_type=Logger.TRAINING_TYPE)
     run.save()
     environment_helper = EnvironmentHelper()
-    agent = PPOAgent()
+    agent = LSTMAgent()
     if resume:
         agent.load()
         run.dynamic_config.next_episode()
@@ -100,59 +100,6 @@ def main():
     current_episode = Run.instance().dynamic_config.current_episode
     for i in range(current_episode, run.training_config.iteration_count):
         iterate(environment_helper, agent, run, i)
-
-
-def iterate(environment_helper: EnvironmentHelper, agent: PPOAgent, run: Run, i: int):
-    Logger.log(f"-------------------------",
-               episode=Run.instance().dynamic_config.current_episode,
-               log_type=Logger.REWARD_TYPE,
-               print_message=True)
-    Logger.log(f"-------------------------",
-               episode=Run.instance().dynamic_config.current_episode,
-               log_type=Logger.REWARD_TYPE,
-               print_message=True)
-    Logger.log(f"starting iteration {i}:",
-               episode=Run.instance().dynamic_config.current_episode,
-               log_type=Logger.REWARD_TYPE,
-               print_message=True)
-    memory = environment_helper.rollout(agent)  # train rollout
-    environment_helper.calculate_advantages(memory)
-    agent.train(memory)
-    visualize = i % 5 == 0
-    mean_rewards = environment_helper.test(agent, visualize)  # test rollout
-    agent.save()
-    if mean_rewards > run.dynamic_config.best_reward:
-        run.dynamic_config.best_reward = mean_rewards
-        Logger.log(f"max reward changed to: {mean_rewards}",
-                   episode=Run.instance().dynamic_config.current_episode,
-                   log_type=Logger.REWARD_TYPE,
-                   print_message=True)
-        add_episode_to_best_results()
-    Logger.log(f"test reward: {mean_rewards}",
-               episode=Run.instance().dynamic_config.current_episode,
-               log_type=Logger.REWARD_TYPE,
-               print_message=True)
-    Run.instance().dynamic_config.next_episode()
-    removing_epoch = int(i - 10)
-
-    if os.path.exists(f"{run.experiment_path}/networks/{removing_epoch}"):
-        shutil.rmtree(f"{run.experiment_path}/networks/{removing_epoch}")
-    # if os.path.exists(f"{run.experiment_path}/visualizations/{removing_epoch}"):
-    #     shutil.rmtree(f"{run.experiment_path}/visualizations/{removing_epoch}")
-    if os.path.exists(f"{run.experiment_path}/debugs/{removing_epoch}"):
-        shutil.rmtree(f"{run.experiment_path}/debugs/{removing_epoch}")
-
-
-def add_episode_to_best_results():
-    run = Run.instance()
-    shutil.copytree(
-        f"{run.experiment_path}/networks/{run.dynamic_config.current_episode}",
-        f"{run.experiment_path}/networks/best_results/{run.dynamic_config.current_episode}")
-    if os.path.exists(f"{run.experiment_path}/visualizations/{run.dynamic_config.current_episode}"):
-        shutil.copytree(
-            f"{run.experiment_path}/visualizations/{run.dynamic_config.current_episode}",
-            f"{run.experiment_path}/visualizations/best_results/{run.dynamic_config.current_episode}"
-        )
 
 
 if __name__ == "__main__":
