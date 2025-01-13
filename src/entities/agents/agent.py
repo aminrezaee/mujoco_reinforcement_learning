@@ -45,11 +45,11 @@ class Agent(BaseAgent):
         if not path.exists(load_path):
             raise ValueError("the current iteration does not exist")
         self.actor_state_dict = torch.load(f"{load_path}/actor.pth")
-        self.actor = Actor()
+        # self.actor = Actor()
         self.actor.load_state_dict(self.actor_state_dict)
 
         self.critic_state_dict = torch.load(f"{load_path}/critic.pth")
-        self.critic = Critic()
+        # self.critic = Critic()
         self.critic.load_state_dict(self.critic_state_dict)
 
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(),

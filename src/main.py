@@ -85,11 +85,11 @@ def main():
                   normalize_observations=True,
                   sequence_wise_normalization=True,
                   dtype=torch.float32)
-        run.save()
     Logger.log("initialize src directory!",
                episode=run.dynamic_config.current_episode,
                path=current_experiment_path,
                log_type=Logger.TRAINING_TYPE)
+    run.save()
     environment_helper = EnvironmentHelper()
     agent = PPOAgent()
     if resume:
@@ -99,44 +99,48 @@ def main():
     makedirs(f"{Run.instance().experiment_path}/visualizations/best_results", exist_ok=True)
     current_episode = Run.instance().dynamic_config.current_episode
     for i in range(current_episode, run.training_config.iteration_count):
-        Logger.log(f"-------------------------",
-                   episode=Run.instance().dynamic_config.current_episode,
-                   log_type=Logger.REWARD_TYPE,
-                   print_message=True)
-        Logger.log(f"-------------------------",
-                   episode=Run.instance().dynamic_config.current_episode,
-                   log_type=Logger.REWARD_TYPE,
-                   print_message=True)
-        Logger.log(f"starting iteration {i}:",
-                   episode=Run.instance().dynamic_config.current_episode,
-                   log_type=Logger.REWARD_TYPE,
-                   print_message=True)
-        memory = environment_helper.rollout(agent)  # train rollout
-        environment_helper.calculate_advantages(memory)
-        agent.train(memory)
-        visualize = i % 5 == 0
-        mean_rewards = environment_helper.test(agent, visualize)  # test rollout
-        agent.save()
-        if mean_rewards > run.dynamic_config.best_reward:
-            run.dynamic_config.best_reward = mean_rewards
-            Logger.log(f"max reward changed to: {mean_rewards}",
-                       episode=Run.instance().dynamic_config.current_episode,
-                       log_type=Logger.REWARD_TYPE,
-                       print_message=True)
-            add_episode_to_best_results()
-        Logger.log(f"test reward: {mean_rewards}",
-                   episode=Run.instance().dynamic_config.current_episode,
-                   log_type=Logger.REWARD_TYPE,
-                   print_message=True)
-        Run.instance().dynamic_config.next_episode()
-        removing_epoch = int(i - 10)
+        iterate(environment_helper, agent, run, i)
 
-        if os.path.exists(f"{run.experiment_path}/networks/{removing_epoch}"):
-            shutil.rmtree(f"{run.experiment_path}/networks/{removing_epoch}")
-        # if os.path.exists(f"{run.experiment_path}/visualizations/{removing_epoch}"):
-        #     shutil.rmtree(f"{run.experiment_path}/visualizations/{removing_epoch}")
-        if os.path.exists(f"{run.experiment_path}/debugs/{removing_epoch}"):
-            shutil.rmtree(f"{run.experiment_path}/debugs/{removing_epoch}")
+
+def iterate(environment_helper: EnvironmentHelper, agent: PPOAgent, run: Run, i: int):
+    Logger.log(f"-------------------------",
+               episode=Run.instance().dynamic_config.current_episode,
+               log_type=Logger.REWARD_TYPE,
+               print_message=True)
+    Logger.log(f"-------------------------",
+               episode=Run.instance().dynamic_config.current_episode,
+               log_type=Logger.REWARD_TYPE,
+               print_message=True)
+    Logger.log(f"starting iteration {i}:",
+               episode=Run.instance().dynamic_config.current_episode,
+               log_type=Logger.REWARD_TYPE,
+               print_message=True)
+    memory = environment_helper.rollout(agent)  # train rollout
+    environment_helper.calculate_advantages(memory)
+    agent.train(memory)
+    visualize = i % 5 == 0
+    mean_rewards = environment_helper.test(agent, visualize)  # test rollout
+    agent.save()
+    if mean_rewards > run.dynamic_config.best_reward:
+        run.dynamic_config.best_reward = mean_rewards
+        Logger.log(f"max reward changed to: {mean_rewards}",
+                   episode=Run.instance().dynamic_config.current_episode,
+                   log_type=Logger.REWARD_TYPE,
+                   print_message=True)
+        add_episode_to_best_results()
+    Logger.log(f"test reward: {mean_rewards}",
+               episode=Run.instance().dynamic_config.current_episode,
+               log_type=Logger.REWARD_TYPE,
+               print_message=True)
+    Run.instance().dynamic_config.next_episode()
+    removing_epoch = int(i - 10)
+
+    if os.path.exists(f"{run.experiment_path}/networks/{removing_epoch}"):
+        shutil.rmtree(f"{run.experiment_path}/networks/{removing_epoch}")
+    # if os.path.exists(f"{run.experiment_path}/visualizations/{removing_epoch}"):
+    #     shutil.rmtree(f"{run.experiment_path}/visualizations/{removing_epoch}")
+    if os.path.exists(f"{run.experiment_path}/debugs/{removing_epoch}"):
+        shutil.rmtree(f"{run.experiment_path}/debugs/{removing_epoch}")
 
 
 def add_episode_to_best_results():
