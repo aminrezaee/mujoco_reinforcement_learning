@@ -5,6 +5,7 @@ from entities.features import Run
 from os import makedirs
 import mediapy as media
 from entities.timestep import Timestep
+from gymnasium.core import Env
 
 
 class EnvironmentHelper(ABC):
@@ -38,7 +39,7 @@ class EnvironmentHelper(ABC):
         makedirs(path, exist_ok=True)
         media.write_video(f"{path}/video.mp4", self.images, fps=30)
 
-    def get_using_environment(self, test_phase: bool):
+    def get_using_environment(self, test_phase: bool) -> Env:
         using_environment = self.environment
         if test_phase:
             using_environment = self.test_environment
