@@ -47,7 +47,8 @@ class PPO(Algorithm):
                 torch.tensor(
                     self.environment_helper.timestep.terminated[:, None]).to(device).unsqueeze(1),
                 'truncated':
-                torch.tensor(self.timestep.truncated[:, None]).to(device).unsqueeze(1)
+                torch.tensor(
+                    self.environment_helper.timestep.truncated[:, None]).to(device).unsqueeze(1)
             }
             self.environment_helper.memory.append(
                 TensorDict(memory_item, batch_size=(batch_size, 1)))
@@ -156,6 +157,6 @@ class PPO(Algorithm):
         pass
 
     def _iterate(self):
-        memory = self.rollout(self.agent)  # train rollout
+        memory = self.rollout()  # train rollout
         self.calculate_advantages(memory)
         self.train(memory)

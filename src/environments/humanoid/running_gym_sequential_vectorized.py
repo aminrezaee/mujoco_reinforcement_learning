@@ -58,7 +58,7 @@ class EnvironmentHelper(Helper):
         environment_timestep.info = last_timestep.info
         self.shift_observations(test_phase=False)
         environment_timestep.observation[:, :, -1] = last_timestep.observation
-        self.rewards.append(self.timestep.reward)
+        self.rewards.append(self.environment.timestep.reward)
 
     def get_state(self, test_phase: bool) -> torch.Tensor:
         timestep: Timestep = self.get_using_environment(test_phase).timestep

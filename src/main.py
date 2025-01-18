@@ -1,4 +1,4 @@
-from src.entities.agents.ppo_agent import PPOAgent
+from entities.agents.ppo_agent import PPOAgent
 from environments.humanoid.running_gym_sequential_vectorized import EnvironmentHelper
 import torch
 from torch.nn import ELU
@@ -7,6 +7,7 @@ from utils.logger import Logger
 from utils.io import find_experiment_name
 from entities.features import *
 from entities.algorithms.ppo import PPO
+from entities.algorithms.soft_actor_critic import SoftActorCritic
 from os import makedirs, listdir
 
 

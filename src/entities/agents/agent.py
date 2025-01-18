@@ -14,9 +14,9 @@ class Agent(BaseAgent):
 
     def __init__(self):
         self.networks: ModuleDict = ModuleDict()
-        self.initialize_networks()
         self.optimizers: Dict[str, Adam] = dict()
         self.schedulers = dict()
+        self.initialize_networks()
         pass
 
     def initialize_networks(self):
