@@ -59,31 +59,12 @@ class PPO(Algorithm):
                    episode=self.environment_helper.run.dynamic_config.current_episode,
                    log_type=Logger.REWARD_TYPE,
                    print_message=False)
-        Logger.log(f"total episode reward: {memory_item['reward'].mean()}",
-                   episode=self.environment_helper.run.dynamic_config.current_episode,
-                   log_type=Logger.REWARD_TYPE,
-                   print_message=True)
+        Logger.log(
+            f"total episode reward: {torch.cat(self.environment_helper.memory, dim=1)['reward'].mean()}",
+            episode=self.environment_helper.run.dynamic_config.current_episode,
+            log_type=Logger.REWARD_TYPE,
+            print_message=True)
         return torch.cat(self.environment_helper.memory, dim=1)
-
-    @torch.no_grad
-    def test(self, visualize: bool):
-        rewards = []
-        self.environment_helper.reset_environment(test_phase=True)
-        next_state = self.environment_helper.get_state(test_phase=True)
-        test_timestep: Timestep = self.environment_helper.test_timestep
-        while not (test_timestep.terminated or test_timestep.truncated):
-            current_state = torch.clone(next_state)
-            sub_actions, _ = self.agent.act(current_state, return_dist=True, test_phase=False)
-            test_timestep.observation, reward, test_timestep.terminated, test_timestep.truncated, info = self.environment_helper.test_environment.step(
-                torch.cat(sub_actions, dim=0).reshape(-1))
-            rewards.append(reward)
-            next_state = self.environment_helper.get_state(test_phase=True)
-            if visualize:
-                rendered_rgb_image = self.environment_helper.test_environment.render()
-                self.environment_helper.images.append(rendered_rgb_image)
-        if visualize:
-            self.environment_helper.visualize()
-        return sum(rewards) / len(rewards)
 
     @torch.no_grad
     def calculate_advantages(self, memory: TensorDict):
@@ -126,12 +107,13 @@ class PPO(Algorithm):
             idx = torch.randperm(len(memory))
             shuffled_memory = memory[idx]
             for i in range(batches_per_epoch):
+                self.agent.optimizer.zero_grad()
                 batch = shuffled_memory[int(i * batch_size):int((i + 1) * batch_size)]
                 if len(batch) != batch_size:
                     continue
                 sub_actions = batch['action']
                 joint_index = np.random.randint(0, Run.instance().agent_config.sub_action_count)
-                mean, std = self.agent.actor(batch['current_state'])
+                mean, std = self.agent.networks['actor'](batch['current_state'])
                 distributions = [
                     torch.distributions.Normal(mean[i], std[i]) for i in range(batch_size)
                 ]
@@ -141,17 +123,11 @@ class PPO(Algorithm):
                     distributions[i].log_prob(sub_actions[i]).sum()[None] for i in range(batch_size)
                 ])
                 # critic loss
-                current_state_value = self.get_state_value(batch['current_state'])
+                current_state_value = self.agent.get_state_value(batch['current_state'])
                 current_state_value_target = batch['current_state_value_target']
                 critic_loss: torch.Tensor = mse_loss(current_state_value,
                                                      current_state_value_target,
                                                      reduction='mean')
-                self.agent.critic_optimizer.zero_grad()
-                critic_loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.agent.critic.parameters(),
-                                               Run.instance().ppo_config.max_grad_norm)
-                self.agent.critic_optimizer.step()
-
                 # actor loss
                 advantage = batch['advantage']
                 total_entropy = sum([d.entropy().mean() for d in distributions])
@@ -162,11 +138,10 @@ class PPO(Algorithm):
                                          1.0 + Run.instance().ppo_config.clip_epsilon) * advantage
                 actor_loss: torch.Tensor = -torch.min(surrogate1, surrogate2).mean(
                 ) - total_entropy * Run.instance().ppo_config.entropy_eps
-                self.agent.actor_optimizer.zero_grad()
-                actor_loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.agent.actor.parameters(),
+                (critic_loss + actor_loss).backward()
+                torch.nn.utils.clip_grad_norm_(self.agent.networks.parameters(),
                                                Run.instance().ppo_config.max_grad_norm)
-                self.agent.actor_optimizer.step()
+                self.agent.optimizer.step()
 
                 iteration_losses[0].append(actor_loss.detach().item())
                 iteration_losses[1].append(critic_loss.detach().item())
@@ -176,8 +151,7 @@ class PPO(Algorithm):
         episode_actor_loss = sum(epoch_losses[0]) / len(epoch_losses[0])
         episode_critic_loss = sum(epoch_losses[1]) / len(epoch_losses[1])
         if run.dynamic_config.current_episode < 2500:
-            self.agent.actor_scheduler.step()
-            self.agent.critic_scheduler.step()
+            self.agent.scheduler.step()
         Logger.log(
             f"Actor Loss: {episode_actor_loss} Critic Loss: {episode_critic_loss} Epoch Loss: {episode_actor_loss + episode_critic_loss}",
             episode=Run.instance().dynamic_config.current_episode,

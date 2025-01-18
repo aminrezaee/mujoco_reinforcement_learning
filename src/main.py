@@ -1,4 +1,4 @@
-from entities.agents.lstm_agent import LSTMAgent
+from src.entities.agents.ppo_agent import PPOAgent
 from environments.humanoid.running_gym_sequential_vectorized import EnvironmentHelper
 import torch
 from torch.nn import ELU
@@ -90,7 +90,9 @@ def main():
                log_type=Logger.TRAINING_TYPE)
     run.save()
     environment_helper = EnvironmentHelper()
-    agent = LSTMAgent()
+    modules = dict()
+
+    agent = PPOAgent()
     if resume:
         agent.load()
         run.dynamic_config.next_episode()

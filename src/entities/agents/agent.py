@@ -6,15 +6,36 @@ from entities.features import Run
 from os import makedirs, path
 import torch
 from torch.nn import ModuleDict
+from torch.optim.lr_scheduler import ExponentialLR
 
 
 class Agent(BaseAgent):
 
     def __init__(self):
+        self.networks: ModuleDict = ModuleDict()
+        self.initialize_networks()
+        self.optimizer = torch.optim.Adam(self.networks.parameters(),
+                                          lr=Run.instance().training_config.learning_rate)
+        self.scheduler = ExponentialLR(self.optimizer, gamma=0.999)
         pass
 
-    def act(self, state, return_dist: bool = False):
+    def initialize_networks(self):
         pass
+
+    def act(self,
+            state: torch.Tensor,
+            return_dist: bool = False,
+            test_phase: bool = False) -> torch.Tensor:
+        means, stds = self.networks['actor'](state)
+        batch_size = len(state)
+        distributions = [torch.distributions.Normal(means[i], stds[i]) for i in range(batch_size)]
+        if test_phase:
+            action = [means[i] for i in range(batch_size)]
+        else:
+            action = [distributions[i].sample()[None, :] for i in range(batch_size)]
+        if return_dist:
+            return action, distributions
+        return action
 
     def get_state_value(self, state) -> float:
         pass
