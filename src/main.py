@@ -43,6 +43,11 @@ def main():
                                advantage_scaler=1e+0,
                                normalize_advantage=True,
                                critic_coeffiecient=1.0)
+        sac_config = SACConfig(max_grad_norm=1.0,
+                               gamma=0.99,
+                               alpha=0.2,
+                               tau=0.005,
+                               target_update_interval=1)
         agent_config = AgentConfig(sub_action_count=1)
         network_config = NetworkConfig(input_shape=376,
                                        output_shape=17,
@@ -69,6 +74,7 @@ def main():
         run = Run(reward_config,
                   training_config,
                   ppo_config,
+                  sac_config,
                   environment_config,
                   agent_config,
                   network_config,

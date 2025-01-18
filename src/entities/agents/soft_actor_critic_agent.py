@@ -1,0 +1,34 @@
+from .agent import Agent
+from models.lstm_actor import LSTMActor as Actor
+from models.lstm_q_network import LSTMQNetwork
+import torch
+from entities.features import Run
+from torch.optim.lr_scheduler import ExponentialLR
+from os import path
+from torch.nn import ModuleDict
+
+
+class SoftActorCriticAgent(Agent):
+
+    def initialize_networks(self):
+        # initialize models
+        self.networks['actor'] = Actor()
+        self.networks['online_critic'] = LSTMQNetwork()
+        self.networks['target_critic'] = LSTMQNetwork()
+        # initialize optimizers
+        self.optimizers['actor'] = torch.optim.Adam(self.networks['actor'].parameters(),
+                                                    lr=Run.instance().training_config.learning_rate)
+        self.optimizers['online_critic'] = torch.optim.Adam(
+            self.networks['critic'].parameters(), lr=Run.instance().training_config.learning_rate)
+        self.optimizers['target_critic'] = torch.optim.Adam(
+            self.networks['critic'].parameters(), lr=Run.instance().training_config.learning_rate)
+        # initialize schedulers
+        self.schedulers['actor'] = ExponentialLR(self.optimizers['actor'], gamma=0.999)
+        self.schedulers['online_critic'] = ExponentialLR(self.optimizers['online_critic'],
+                                                         gamma=0.999)
+        self.schedulers['target_critic'] = ExponentialLR(self.optimizers['target_critic'],
+                                                         gamma=0.999)
+        return
+
+    def get_state_value(self, state):
+        return self.networks['critic'](state)
