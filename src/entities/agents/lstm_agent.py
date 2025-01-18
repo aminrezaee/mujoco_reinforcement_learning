@@ -9,8 +9,11 @@ from torch.nn import ModuleDict
 
 class LSTMAgent(Agent):
 
-    def __init__(self):
-        self.networks: ModuleDict = ModuleDict()
+    def __init__(self, modules: dict):
+        if "actor" not in modules.keys():
+            raise ValueError("actor not in modules")
+        self.networks: ModuleDict = ModuleDict(modules)
+
         self.optimizer = torch.optim.Adam(self.networks.parameters(),
                                           lr=Run.instance().training_config.learning_rate)
         self.scheduler = ExponentialLR(self.optimizer, gamma=0.999)
@@ -19,7 +22,7 @@ class LSTMAgent(Agent):
             state: torch.Tensor,
             return_dist: bool = False,
             test_phase: bool = False) -> torch.Tensor:
-        means, stds = self.actor.act(state)
+        means, stds = self.networks['actor'](state)
         batch_size = len(state)
         distributions = [torch.distributions.Normal(means[i], stds[i]) for i in range(batch_size)]
         if test_phase:

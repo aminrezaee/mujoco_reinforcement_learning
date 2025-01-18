@@ -9,9 +9,6 @@ from torch.nn.functional import huber_loss, mse_loss
 
 class SoftActorCritic(Algorithm):
 
-    def test(self, visualize: bool):
-        pass
-
     def train(self, memory: TensorDict):
         pass
 

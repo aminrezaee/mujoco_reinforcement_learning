@@ -4,6 +4,8 @@ from abc import ABC
 from tensordict import TensorDict
 from utils.logger import Logger
 from utils.io import add_episode_to_best_results, remove_epoch_results
+import torch
+from entities.timestep import Timestep
 
 
 class Algorithm(ABC):
@@ -13,8 +15,27 @@ class Algorithm(ABC):
         self.agent = agent
         pass
 
-    def test(self, visualize: bool) -> float:
-        pass
+    @torch.no_grad
+    def test(self, visualize: bool):
+        rewards = []
+        self.environment_helper.reset_environment(test_phase=True)
+        next_state = self.environment_helper.get_state(test_phase=True)
+        print("test")
+        print(next_state.mean(), next_state.std())
+        test_timestep: Timestep = self.environment_helper.test_timestep
+        while not (test_timestep.terminated or test_timestep.truncated):
+            current_state = torch.clone(next_state)
+            sub_actions, _ = self.agent.act(current_state, return_dist=True, test_phase=False)
+            test_timestep.observation, reward, test_timestep.terminated, test_timestep.truncated, info = self.environment_helper.test_environment.step(
+                torch.cat(sub_actions, dim=0).reshape(-1))
+            rewards.append(reward)
+            next_state = self.environment_helper.get_state(test_phase=True)
+            if visualize:
+                rendered_rgb_image = self.environment_helper.test_environment.render()
+                self.environment_helper.images.append(rendered_rgb_image)
+        if visualize:
+            self.environment_helper.visualize()
+        return sum(rewards) / len(rewards)
 
     def train(self, memory: TensorDict):
         pass
