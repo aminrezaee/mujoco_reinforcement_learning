@@ -1,12 +1,13 @@
 from abc import ABC
 
 from tensordict import TensorDict
+from typing import List, Tuple, Union, Dict
 from .base_agent import BaseAgent
 from entities.features import Run
 from os import makedirs, path
 import torch
 from torch.nn import ModuleDict
-from torch.optim.lr_scheduler import ExponentialLR
+from torch.optim.adam import Adam
 
 
 class Agent(BaseAgent):
@@ -14,18 +15,19 @@ class Agent(BaseAgent):
     def __init__(self):
         self.networks: ModuleDict = ModuleDict()
         self.initialize_networks()
-        self.optimizer = torch.optim.Adam(self.networks.parameters(),
-                                          lr=Run.instance().training_config.learning_rate)
-        self.scheduler = ExponentialLR(self.optimizer, gamma=0.999)
+        self.optimizers: Dict[str, Adam] = dict()
+        self.schedulers = dict()
         pass
 
     def initialize_networks(self):
         pass
 
-    def act(self,
-            state: torch.Tensor,
-            return_dist: bool = False,
-            test_phase: bool = False) -> torch.Tensor:
+    def act(
+        self,
+        state: torch.Tensor,
+        return_dist: bool = False,
+        test_phase: bool = False
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, List[torch.distributions.Normal]]]:
         means, stds = self.networks['actor'](state)
         batch_size = len(state)
         distributions = [torch.distributions.Normal(means[i], stds[i]) for i in range(batch_size)]
@@ -46,8 +48,9 @@ class Agent(BaseAgent):
         makedirs(f"{experiment_path}/networks/{current_episode}", exist_ok=True)
         torch.save(self.networks.state_dict(),
                    f"{experiment_path}/networks/{current_episode}/networks.pth")
-        torch.save(self.optimizer.state_dict(),
-                   f"{experiment_path}/networks/{current_episode}/optimizer.pth")
+        for name in self.optimizers.keys():
+            torch.save(self.optimizers[name].state_dict(),
+                       f"{experiment_path}/networks/{current_episode}/optimizer_{name}.pth")
         Run.instance().save()
 
     def load(self):
@@ -60,10 +63,8 @@ class Agent(BaseAgent):
         if not path.exists(load_path):
             raise ValueError("the current iteration does not exist")
         self.networks_state_dict = torch.load(f"{load_path}/networks.pth")
-        self.networks = ModuleDict()
         self.networks.load_state_dict(self.networks_state_dict)
 
-        self.optimizer = torch.optim.Adam(self.networks.parameters(),
-                                          lr=run.training_config.learning_rate)
-        self.optimizer_state_dict = torch.load(f"{load_path}/optimizer.pth")
-        self.optimizer.load_state_dict(self.optimizer_state_dict)
+        for name, optimizer in self.optimizers.items():
+            optimizer_state_dict = torch.load(f"{load_path}/optimizer_{name}.pth")
+            optimizer.load_state_dict(optimizer_state_dict)
