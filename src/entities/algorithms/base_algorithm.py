@@ -20,8 +20,6 @@ class Algorithm(ABC):
         rewards = []
         self.environment_helper.reset_environment(test_phase=True)
         next_state = self.environment_helper.get_state(test_phase=True)
-        print("test")
-        print(next_state.mean(), next_state.std())
         test_timestep: Timestep = self.environment_helper.test_timestep
         while not (test_timestep.terminated or test_timestep.truncated):
             current_state = torch.clone(next_state)
