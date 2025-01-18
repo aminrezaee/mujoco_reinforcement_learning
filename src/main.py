@@ -47,7 +47,8 @@ def main():
                                gamma=0.99,
                                alpha=0.2,
                                tau=0.005,
-                               target_update_interval=1)
+                               target_update_interval=1,
+                               automatic_entropy_tuning=False)
         agent_config = AgentConfig(sub_action_count=1)
         network_config = NetworkConfig(input_shape=376,
                                        output_shape=17,

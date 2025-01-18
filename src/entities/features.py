@@ -88,6 +88,7 @@ class SACConfig:
     alpha: float
     tau: float
     target_update_interval: int
+    automatic_entropy_tuning: bool
 
 
 @dataclass
