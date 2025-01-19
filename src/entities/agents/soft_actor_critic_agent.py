@@ -19,10 +19,10 @@ class SoftActorCriticAgent(Agent):
         # initialize optimizers
         self.optimizers['actor'] = torch.optim.Adam(self.networks['actor'].parameters(),
                                                     lr=run.training_config.learning_rate)
-        self.optimizers['online_critic'] = torch.optim.Adam(self.networks['critic'].parameters(),
-                                                            lr=run.training_config.learning_rate)
-        self.optimizers['target_critic'] = torch.optim.Adam(self.networks['critic'].parameters(),
-                                                            lr=run.training_config.learning_rate)
+        self.optimizers['online_critic'] = torch.optim.Adam(
+            self.networks['online_critic'].parameters(), lr=run.training_config.learning_rate)
+        self.optimizers['target_critic'] = torch.optim.Adam(
+            self.networks['target_critic'].parameters(), lr=run.training_config.learning_rate)
         if run.sac_config.automatic_entropy_tuning:
             self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
             self.optimizers['alpha'] = torch.optim.Adam(
