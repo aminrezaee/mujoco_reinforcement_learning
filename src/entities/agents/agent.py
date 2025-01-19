@@ -36,6 +36,7 @@ class Agent(BaseAgent):
             action = [means[i] for i in range(batch_size)]
         else:
             action = [distributions[i].sample()[None, :] for i in range(batch_size)]
+        action = torch.cat(action, dim=0)
         if return_dist:
             return action, distributions
         return action

@@ -2,6 +2,7 @@ from torch import nn
 from .network_block_creator import create_network
 from entities.features import Run
 import torch
+from memory_profiler import profile
 
 
 class LSTMActor(nn.Module):
@@ -30,11 +31,10 @@ class LSTMActor(nn.Module):
 
     def forward(self, x):  # x of shape (batch_size, sequence_length, 376)
         run = Run.instance()
-        features = self.feature_extractor(x)  # features of shape (batch_size, sequence_length, 20)
-        current_timestep_features = features[0].reshape(len(x), -1)
-        current_timestep_features = Run.instance().network_config.activation_class()(
-            current_timestep_features)
-        output = self.actor(current_timestep_features)
+        features = self.feature_extractor(x)[0].reshape(
+            len(x), -1)  # features of shape (batch_size, sequence_length, 20)
+        features = Run.instance().network_config.activation_class()(features)
+        output = self.actor(features)
         std = self.actor_logstd[:run.network_config.output_shape].exp()
         return output, torch.repeat_interleave(std[None, :], x.shape[0], dim=0)
 
