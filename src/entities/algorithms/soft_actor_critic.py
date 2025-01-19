@@ -13,6 +13,13 @@ def soft_update(target: Module, source: Module, tau):
         target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
 
 
+def get_action_log_probs(distributions, next_state_actions):
+    return torch.cat([
+        distributions[j].log_prob(next_state_actions[j]).sum()[None]
+        for j in range(len(next_state_actions))
+    ])
+
+
 class SoftActorCritic(Algorithm):
 
     def __init__(self, environment_helper, agent):
@@ -35,17 +42,15 @@ class SoftActorCritic(Algorithm):
             with torch.no_grad():
                 next_state_actions, distributions = self.agent.act(next_state_batch,
                                                                    return_dist=True)
-                next_state_actions_log_prob = torch.cat([
-                    distributions[j].log_prob(next_state_actions[j])
-                    for j in range(len(next_state_actions))
-                ])
+                next_state_actions_log_prob = get_action_log_probs(distributions,
+                                                                   next_state_actions)
                 qf1_next_target, qf2_next_target = self.agent.networks['target_critic'](
-                    next_state_batch, next_state_actions)
+                    next_state_batch, torch.cat(next_state_actions, dim=0).to(run.device))
                 min_qf_next_target = torch.min(
                     qf1_next_target,
                     qf2_next_target) - run.sac_config.alpha * next_state_actions_log_prob
-                next_q_value = reward_batch + mask_batch * run.sac_config.gamma * (
-                    min_qf_next_target)
+                next_q_value = (reward_batch + mask_batch * run.sac_config.gamma *
+                                (min_qf_next_target)).to(run.dtype)
             qf1, qf2 = self.agent.networks['online_critic'](
                 state_batch, action_batch
             )  # Two Q-functions to mitigate positive bias in the policy improvement step
@@ -60,12 +65,12 @@ class SoftActorCritic(Algorithm):
             qf_loss.backward()
             self.agent.optimizers['online_critic'].step()
 
-            state_actions, distributions = self.agent.act(state_batch)
+            state_actions, distributions = self.agent.act(state_batch, return_dist=True)
 
-            qf1_pi, qf2_pi = self.agent.networks['online_critic'](state_batch, state_actions)
-            actions_log_prob = torch.cat([
-                distributions[j].log_prob(state_actions[j]) for j in range(len(next_state_actions))
-            ])
+            qf1_pi, qf2_pi = self.agent.networks['online_critic'](state_batch,
+                                                                  torch.cat(state_actions,
+                                                                            dim=0).to(run.device))
+            actions_log_prob = get_action_log_probs(distributions, state_actions)
             min_qf_pi = torch.min(qf1_pi, qf2_pi)
 
             policy_loss = (
@@ -133,7 +138,7 @@ class SoftActorCritic(Algorithm):
                 torch.tensor(self.environment_helper.timestep.reward)[:,
                                                                       None].to(device).unsqueeze(1),
                 'next_state':
-                next_state,
+                next_state.unsqueeze(1),
                 'terminated':
                 torch.tensor(
                     self.environment_helper.timestep.terminated[:, None]).to(device).unsqueeze(1)
