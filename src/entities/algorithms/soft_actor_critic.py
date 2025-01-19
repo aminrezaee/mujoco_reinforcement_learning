@@ -44,7 +44,7 @@ class SoftActorCritic(Algorithm):
                 next_state_actions_log_prob = get_action_log_probs(distributions,
                                                                    next_state_actions)
                 qf1_next_target, qf2_next_target = self.agent.networks['target_critic'](
-                    next_state_batch, torch.cat(next_state_actions, dim=0).to(run.device))
+                    next_state_batch, next_state_actions.to(run.device))
                 min_qf_next_target = torch.min(
                     qf1_next_target,
                     qf2_next_target) - run.sac_config.alpha * next_state_actions_log_prob
@@ -67,8 +67,7 @@ class SoftActorCritic(Algorithm):
             state_actions, distributions = self.agent.act(state_batch, return_dist=True)
 
             qf1_pi, qf2_pi = self.agent.networks['online_critic'](state_batch,
-                                                                  torch.cat(state_actions,
-                                                                            dim=0).to(run.device))
+                                                                  state_actions.to(run.device))
             actions_log_prob = get_action_log_probs(distributions, state_actions)
             min_qf_pi = torch.min(qf1_pi, qf2_pi)
 
@@ -117,10 +116,11 @@ class SoftActorCritic(Algorithm):
         losses = []
         for timestep in range(run.environment_config.maximum_timesteps):
             # 1. act
-            current_state = torch.clone(next_state)
-            sub_actions, distributions = self.agent.act(current_state,
-                                                        return_dist=True,
-                                                        test_phase=False)
+            with torch.no_grad():
+                current_state = torch.clone(next_state)
+                action, distributions = self.agent.act(current_state,
+                                                       return_dist=True,
+                                                       test_phase=False)
             # 2. train
             if len(self.environment_helper.memory +
                    sub_memory) > run.training_config.batch_size and timestep % 10 == 0:
@@ -130,21 +130,22 @@ class SoftActorCritic(Algorithm):
                                    update_count)))
                 update_count += 1
             # 3. add memory item
-            self.environment_helper.step(torch.cat(sub_actions, dim=0))
+            self.environment_helper.step(action)
             next_state = self.environment_helper.get_state(test_phase=False)
             memory_item = {
                 'current_state':
-                current_state.unsqueeze(1),
+                current_state.unsqueeze(1).detach(),
                 'action':
-                torch.cat(sub_actions, dim=0).unsqueeze(1),
+                action.unsqueeze(1).detach(),
                 'reward':
-                torch.tensor(self.environment_helper.timestep.reward)[:,
-                                                                      None].to(device).unsqueeze(1),
-                'next_state':
-                next_state.unsqueeze(1),
-                'terminated':
                 torch.tensor(
-                    self.environment_helper.timestep.terminated[:, None]).to(device).unsqueeze(1)
+                    self.environment_helper.timestep.reward)[:,
+                                                             None].to(device).unsqueeze(1).detach(),
+                'next_state':
+                next_state.unsqueeze(1).detach(),
+                'terminated':
+                torch.tensor(self.environment_helper.timestep.terminated[:, None]).to(
+                    device).unsqueeze(1).detach()
             }
             sub_memory.append(TensorDict(memory_item, batch_size=(batch_size, 1)))
         Logger.log(f"episode ended with {len(sub_memory)} timesteps",
@@ -167,3 +168,4 @@ class SoftActorCritic(Algorithm):
                        print_message=True)
         self.environment_helper.memory = (
             sub_memory + self.environment_helper.memory)[:run.sac_config.memory_capacity]
+        del sub_memory
