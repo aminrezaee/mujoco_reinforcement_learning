@@ -1,4 +1,5 @@
 from entities.agents.ppo_agent import PPOAgent
+from entities.agents.soft_actor_critic_agent import SoftActorCriticAgent
 from environments.humanoid.running_gym_sequential_vectorized import EnvironmentHelper
 import torch
 from torch.nn import ELU
@@ -100,14 +101,14 @@ def main():
     environment_helper = EnvironmentHelper()
     modules = dict()
 
-    agent = PPOAgent()
+    agent = SoftActorCriticAgent()
     if resume:
         agent.load()
         run.dynamic_config.next_episode()
     makedirs(f"{Run.instance().experiment_path}/networks/best_results", exist_ok=True)
     makedirs(f"{Run.instance().experiment_path}/visualizations/best_results", exist_ok=True)
     current_episode = Run.instance().dynamic_config.current_episode
-    algorithm = PPO(environment_helper, agent)
+    algorithm = SoftActorCritic(environment_helper, agent)
     for i in range(current_episode, run.training_config.iteration_count):
         algorithm.iterate()
 
