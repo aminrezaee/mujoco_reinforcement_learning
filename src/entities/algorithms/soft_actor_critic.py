@@ -29,7 +29,7 @@ class SoftActorCritic(Algorithm):
         run: Run = self.environment_helper.run
         batch_size = run.training_config.batch_size
         memory = memory.view(-1)
-        batches_per_epoch = 4
+        batches_per_epoch = 1
         epoch_losses = [[], []]
         idx = torch.randperm(len(memory))
         shuffled_memory = memory[idx]
@@ -165,4 +165,3 @@ class SoftActorCritic(Algorithm):
                        log_type=Logger.REWARD_TYPE,
                        print_message=True)
         self.environment_helper.memory = self.environment_helper.memory + sub_memory
-        run.dynamic_config.next_episode()
