@@ -47,7 +47,7 @@ def main():
                                critic_coeffiecient=1.0)
         sac_config = SACConfig(max_grad_norm=1.0,
                                gamma=0.99,
-                               alpha=0.2,
+                               alpha=0.05,
                                tau=0.005,
                                memory_capacity=1000,
                                target_update_interval=1,
@@ -89,7 +89,7 @@ def main():
                   central_actor=True,
                   normalize_rewards=True,
                   normalize_actions=True,
-                  normalize_observations=True,
+                  normalize_observations=False,
                   sequence_wise_normalization=True,
                   dtype=torch.float32)
     Logger.log("initialize src directory!",
