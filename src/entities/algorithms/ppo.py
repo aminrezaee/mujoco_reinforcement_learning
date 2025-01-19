@@ -104,7 +104,6 @@ class PPO(Algorithm):
             idx = torch.randperm(len(memory))
             shuffled_memory = memory[idx]
             for i in range(batches_per_epoch):
-                self.agent.optimizer.zero_grad()
                 batch = shuffled_memory[int(i * batch_size):int((i + 1) * batch_size)]
                 if len(batch) != batch_size:
                     continue
@@ -125,6 +124,9 @@ class PPO(Algorithm):
                 critic_loss: torch.Tensor = mse_loss(current_state_value,
                                                      current_state_value_target,
                                                      reduction='mean')
+                self.agent.optimizers['critic'].zero_grad()
+                critic_loss.backward()
+                self.agent.optimizers['critic'].step()
                 # actor loss
                 advantage = batch['advantage']
                 total_entropy = sum([d.entropy().mean() for d in distributions])
@@ -135,10 +137,11 @@ class PPO(Algorithm):
                                          1.0 + Run.instance().ppo_config.clip_epsilon) * advantage
                 actor_loss: torch.Tensor = -torch.min(surrogate1, surrogate2).mean(
                 ) - total_entropy * Run.instance().ppo_config.entropy_eps
-                (critic_loss + actor_loss).backward()
+                self.agent.optimizers['critic'].zero_grad()
+                actor_loss.backward()
+                self.agent.optimizers['critic'].step()
                 torch.nn.utils.clip_grad_norm_(self.agent.networks.parameters(),
                                                Run.instance().ppo_config.max_grad_norm)
-                self.agent.optimizer.step()
 
                 iteration_losses[0].append(actor_loss.detach().item())
                 iteration_losses[1].append(critic_loss.detach().item())
@@ -148,7 +151,8 @@ class PPO(Algorithm):
         episode_actor_loss = sum(epoch_losses[0]) / len(epoch_losses[0])
         episode_critic_loss = sum(epoch_losses[1]) / len(epoch_losses[1])
         if run.dynamic_config.current_episode < 2500:
-            self.agent.scheduler.step()
+            for scheduler in self.agent.schedulers.values():
+                scheduler.step()
         Logger.log(
             f"Actor Loss: {episode_actor_loss} Critic Loss: {episode_critic_loss} Epoch Loss: {episode_actor_loss + episode_critic_loss}",
             episode=Run.instance().dynamic_config.current_episode,

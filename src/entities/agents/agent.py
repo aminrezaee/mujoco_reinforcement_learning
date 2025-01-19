@@ -8,6 +8,7 @@ from os import makedirs, path
 import torch
 from torch.nn import ModuleDict
 from torch.optim.adam import Adam
+from torch.optim.lr_scheduler import ExponentialLR
 
 
 class Agent(BaseAgent):
@@ -15,7 +16,7 @@ class Agent(BaseAgent):
     def __init__(self):
         self.networks: ModuleDict = ModuleDict()
         self.optimizers: Dict[str, Adam] = dict()
-        self.schedulers = dict()
+        self.schedulers: Dict[str, ExponentialLR] = dict()
         self.initialize_networks()
         pass
 
