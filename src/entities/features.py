@@ -87,6 +87,7 @@ class SACConfig:
     gamma: float  # discount factor
     alpha: float
     tau: float
+    memory_capacity: int
     target_update_interval: int
     automatic_entropy_tuning: bool
 
