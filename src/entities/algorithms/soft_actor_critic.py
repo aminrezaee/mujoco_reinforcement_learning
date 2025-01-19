@@ -17,7 +17,7 @@ def get_action_log_probs(distributions, next_state_actions):
     return torch.cat([
         distributions[j].log_prob(next_state_actions[j]).sum()[None]
         for j in range(len(next_state_actions))
-    ])
+    ])[:, None]
 
 
 class SoftActorCritic(Algorithm):
@@ -28,9 +28,10 @@ class SoftActorCritic(Algorithm):
     def train(self, memory: TensorDict, update_count: int):
         run: Run = self.environment_helper.run
         batch_size = run.training_config.batch_size
-        batches_per_epoch = int(run.environment_config.maximum_timesteps *
-                                run.environment_config.num_envs / batch_size)
         memory = memory.view(-1)
+        batches_per_epoch = int(
+            min(run.environment_config.maximum_timesteps * run.environment_config.num_envs,
+                len(memory)) / batch_size)
         epoch_losses = [[], []]
         idx = torch.randperm(len(memory))
         shuffled_memory = memory[idx]
