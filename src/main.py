@@ -58,9 +58,7 @@ def main():
                                        activation_class=ELU,
                                        latent_size=128,
                                        use_bias=True)
-        environment_config = EnvironmentConfig(maximum_timesteps=1000,
-                                               num_envs=10,
-                                               window_length=20)
+        environment_config = EnvironmentConfig(maximum_timesteps=200, num_envs=10, window_length=20)
         dynamic_config = DynamicConfig(0, 0, 0, 0)
         makedirs(experiments_directory, exist_ok=True)
         if experiment_id < 0:  # then create a new one

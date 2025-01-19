@@ -28,9 +28,10 @@ class EnvironmentHelper(ABC):
     def get_state(self, test_phase: bool) -> torch.Tensor:
         pass
 
-    def reset(self):
+    def reset(self, release_memory: bool = True):
         self.rewards = []
-        self.memory = []
+        if release_memory:
+            self.memory = []
         self.images = []
 
     def visualize(self):

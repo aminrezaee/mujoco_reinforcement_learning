@@ -4,6 +4,7 @@ from abc import ABC
 from tensordict import TensorDict
 from utils.logger import Logger
 from utils.io import add_episode_to_best_results, remove_epoch_results
+from utils.error_handling_utils import timeit
 import torch
 from entities.timestep import Timestep
 
@@ -40,6 +41,7 @@ class Algorithm(ABC):
     def train(self, memory: TensorDict):
         pass
 
+    @timeit
     def iterate(self):
         self.__log_start_of_iteration()
         self._iterate()

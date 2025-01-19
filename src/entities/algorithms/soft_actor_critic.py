@@ -29,9 +29,7 @@ class SoftActorCritic(Algorithm):
         run: Run = self.environment_helper.run
         batch_size = run.training_config.batch_size
         memory = memory.view(-1)
-        batches_per_epoch = int(
-            min(run.environment_config.maximum_timesteps * run.environment_config.num_envs,
-                len(memory)) / batch_size)
+        batches_per_epoch = 4
         epoch_losses = [[], []]
         idx = torch.randperm(len(memory))
         shuffled_memory = memory[idx]
@@ -108,7 +106,7 @@ class SoftActorCritic(Algorithm):
         ), alpha_tlogs.item()
 
     def _iterate(self):
-        self.environment_helper.reset()
+        self.environment_helper.reset(release_memory=False)
         self.environment_helper.reset_environment(test_phase=False)
         next_state = self.environment_helper.get_state(test_phase=False)
         batch_size = len(next_state)
@@ -116,6 +114,7 @@ class SoftActorCritic(Algorithm):
         device = run.device
         sub_memory = []
         update_count = 0
+        losses = []
         for _ in range(run.environment_config.maximum_timesteps):
             # 1. act
             current_state = torch.clone(next_state)
@@ -124,8 +123,10 @@ class SoftActorCritic(Algorithm):
                                                         test_phase=False)
             # 2. train
             if len(self.environment_helper.memory + sub_memory) > run.training_config.batch_size:
-                self.train(torch.cat(self.environment_helper.memory + sub_memory, dim=1),
-                           update_count)
+                losses.append(
+                    list(
+                        self.train(torch.cat(self.environment_helper.memory + sub_memory, dim=1),
+                                   update_count)))
                 update_count += 1
             # 3. add memory item
             self.environment_helper.step(torch.cat(sub_actions, dim=0))
@@ -153,5 +154,15 @@ class SoftActorCritic(Algorithm):
                    episode=run.dynamic_config.current_episode,
                    log_type=Logger.REWARD_TYPE,
                    print_message=True)
+        if len(losses) > 0:
+            Logger.log(
+                f"qf1_loss: {torch.tensor(losses)[:,0].mean()} , qf2_loss: {torch.tensor(losses)[:,1].mean()}",
+                episode=run.dynamic_config.current_episode,
+                log_type=Logger.REWARD_TYPE,
+                print_message=True)
+            Logger.log(f"policy_loss: {torch.tensor(losses)[:,2].mean()}",
+                       episode=run.dynamic_config.current_episode,
+                       log_type=Logger.REWARD_TYPE,
+                       print_message=True)
         self.environment_helper.memory = self.environment_helper.memory + sub_memory
         run.dynamic_config.next_episode()
