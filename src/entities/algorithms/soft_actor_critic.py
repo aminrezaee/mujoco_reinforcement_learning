@@ -30,16 +30,16 @@ class SoftActorCritic(Algorithm):
         batch_size = run.training_config.batch_size
         memory = memory.view(-1)
         batches_per_epoch = 4
-        epoch_losses = [[], []]
+        losses = [[] for i in range(4)]
         idx = torch.randperm(len(memory))
-        shuffled_memory = memory[idx]
+        shuffled_memory = torch.clone(memory)[idx]
+        shuffled_memory['reward'] = shuffled_memory['reward'] - shuffled_memory['reward'].mean()
+        shuffled_memory['reward'] = shuffled_memory['reward'] / shuffled_memory['reward'].std()
         for i in range(batches_per_epoch):
             batch = shuffled_memory[int(i * batch_size):int((i + 1) * batch_size)]
             state_batch, next_state_batch, reward_batch, action_batch, mask_batch = batch[
                 'current_state'], batch['next_state'], batch['reward'], batch['action'], batch[
                     'terminated']
-            reward_batch = reward_batch - reward_batch.mean()
-            reward_batch = (reward_batch / reward_batch.std()) * 10
             with torch.no_grad():
                 next_state_actions, distributions = self.agent.act(next_state_batch,
                                                                    return_dist=True)
@@ -102,9 +102,11 @@ class SoftActorCritic(Algorithm):
             if update_count % run.sac_config.target_update_interval == 0:
                 soft_update(self.agent.networks['target_critic'],
                             self.agent.networks['online_critic'], run.sac_config.tau)
-
-        return qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item(
-        ), alpha_tlogs.item()
+            losses[0].append(qf1_loss.item())
+            losses[1].append(qf2_loss.item())
+            losses[2].append(policy_loss.item())
+            losses[3].append(-min_qf_pi.mean().item())
+        return (sum(losses[j]) / len(losses[j]) for j in range(4))
 
     def _iterate(self):
         self.environment_helper.reset(release_memory=False)

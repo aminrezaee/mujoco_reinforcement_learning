@@ -46,8 +46,8 @@ class NetworkBlock(Module):
             layer = Linear(input_shape, out_shape, bias=self.use_bias)
             with torch.no_grad():
                 layer = layer_init(layer)
-                # if self.use_bias:
-                #     layer.bias.fill_(0)
+                if self.use_bias:
+                    layer.bias.fill_(0)
             layers.append(layer)
             if config["activation"] is not None:
                 layers.append(config["activation"]())
@@ -60,7 +60,7 @@ class NetworkBlock(Module):
         self.first_layers = Sequential(*layers)
         self.last_layer = Linear(out_shape, output_shape, bias=self.use_bias)
         with torch.no_grad():
-            self.last_layer = layer_init(self.last_layer, std=0.01)
+            self.last_layer = layer_init(self.last_layer)
             # if self.use_bias:
             #     self.last_layer.bias.fill_(0)
         if config["final_activation"] is not None:
