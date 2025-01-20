@@ -37,10 +37,10 @@ class LSTMQNetwork(nn.Module):
         # input_tensor = cat([state, action], 1)
         features = self.feature_extractor(state)
         current_timestep_features = features[0][:, -1, :]
+        # current_timestep_features = features[0].reshape(len(features), -1)
         current_timestep_features = Run.instance().network_config.activation_class()(
             current_timestep_features)
         input_tensor = cat([current_timestep_features, action], 1)
-        # current_timestep_features = features[0].reshape(len(features), -1)
 
         out1, out2 = self.first_network(input_tensor), self.second_network(input_tensor)
         # print(x.mean() , x.min() , x.max())

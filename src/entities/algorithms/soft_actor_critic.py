@@ -38,6 +38,8 @@ class SoftActorCritic(Algorithm):
             state_batch, next_state_batch, reward_batch, action_batch, mask_batch = batch[
                 'current_state'], batch['next_state'], batch['reward'], batch['action'], batch[
                     'terminated']
+            reward_batch = reward_batch - reward_batch.mean()
+            reward_batch = (reward_batch / reward_batch) * 10
             with torch.no_grad():
                 next_state_actions, distributions = self.agent.act(next_state_batch,
                                                                    return_dist=True)
