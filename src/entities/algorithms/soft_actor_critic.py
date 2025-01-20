@@ -13,6 +13,11 @@ def soft_update(target: Module, source: Module, tau):
         target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
 
 
+def hard_update(target, source):
+    for target_param, param in zip(target.parameters(), source.parameters()):
+        target_param.data.copy_(param.data)
+
+
 def get_action_log_probs(distributions, next_state_actions):
     return torch.cat([
         distributions[j].log_prob(next_state_actions[j]).sum()[None]
@@ -24,6 +29,7 @@ class SoftActorCritic(Algorithm):
 
     def __init__(self, environment_helper, agent):
         super().__init__(environment_helper, agent)
+        hard_update(self.agent.networks['target_critic'], self.agent.networks['online_critic'])
 
     def train(self, memory: TensorDict, update_count: int):
         run: Run = self.environment_helper.run
@@ -105,7 +111,7 @@ class SoftActorCritic(Algorithm):
             losses[0].append(qf1_loss.item())
             losses[1].append(qf2_loss.item())
             losses[2].append(policy_loss.item())
-            losses[3].append(-min_qf_pi.mean().item())
+            losses[3].append(min_qf_pi.mean().item())
         return (sum(losses[j]) / len(losses[j]) for j in range(4))
 
     def _iterate(self):
@@ -166,10 +172,11 @@ class SoftActorCritic(Algorithm):
                 episode=run.dynamic_config.current_episode,
                 log_type=Logger.REWARD_TYPE,
                 print_message=True)
-            Logger.log(f"policy_loss: {torch.tensor(losses)[:,2].mean()}",
-                       episode=run.dynamic_config.current_episode,
-                       log_type=Logger.REWARD_TYPE,
-                       print_message=True)
+            Logger.log(
+                f"policy_loss: {torch.tensor(losses)[:,2].mean()}, min_qf:{torch.tensor(losses)[:,3].mean()}",
+                episode=run.dynamic_config.current_episode,
+                log_type=Logger.REWARD_TYPE,
+                print_message=True)
         self.environment_helper.memory = (
             sub_memory + self.environment_helper.memory)[:run.sac_config.memory_capacity]
         del sub_memory
