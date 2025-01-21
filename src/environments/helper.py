@@ -46,9 +46,13 @@ class EnvironmentHelper(ABC):
             using_environment = self.test_environment
         return using_environment
 
-    def shift_observations(self, test_phase: bool):
+    def shift_observations(self, test_phase: bool, environment_index: int):
         timestep: Timestep = self.get_using_environment(test_phase).timestep
-        timestep.observation[..., :-1] = timestep.observation[..., 1:]
+        if test_phase:
+            timestep.observation[..., :-1] = timestep.observation[..., 1:]
+        else:
+            timestep.observation[environment_index, :, :-1] = timestep.observation[
+                environment_index, :, 1:]
 
     def reset_environment(self, test_phase: bool):
         using_environment = self.get_using_environment(test_phase)

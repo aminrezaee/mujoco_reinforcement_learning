@@ -39,11 +39,6 @@ class EnvironmentHelper(Helper):
                 self.run.environment_config.window_length,
             )), 0.0, False, False, {})
 
-    def shift_observations(self, environment_index: int, test_phase: bool):
-        timestep: Timestep = self.get_using_environment(test_phase).timestep
-        timestep.observation[environment_index, :, :-1] = timestep.observation[environment_index, :,
-                                                                               1:]
-
     def step(self, action: np.ndarray):
         """
         this function is called only for training phase
@@ -61,7 +56,7 @@ class EnvironmentHelper(Helper):
             if environment_timestep.terminated[i]:
                 environment_timestep.observation[i, ...] = last_timestep.observation[i][:, None]
             else:
-                self.shift_observations(i, test_phase=False)
+                self.shift_observations(test_phase=False, environment_index=i)
                 environment_timestep.observation[i, :, -1] = last_timestep.observation[i, ...]
         self.rewards.append(self.environment.timestep.reward)
 

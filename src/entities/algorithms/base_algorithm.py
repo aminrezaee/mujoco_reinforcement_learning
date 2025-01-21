@@ -30,7 +30,7 @@ class Algorithm(ABC):
             if test_timestep.terminated:
                 self.environment_helper.reset_environment(test_phase=True)
             else:
-                self.environment_helper.shift_observations(test_phase=True)
+                self.environment_helper.shift_observations(test_phase=True, environment_index=-1)
                 test_timestep.observation[:, -1] = last_observation
             rewards.append(reward)
             next_state = self.environment_helper.get_state(test_phase=True)
