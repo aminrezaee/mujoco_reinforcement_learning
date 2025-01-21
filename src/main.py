@@ -48,7 +48,7 @@ def main():
         sac_config = SACConfig(max_grad_norm=1.0,
                                gamma=0.99,
                                alpha=0.05,
-                               tau=0.005,
+                               tau=0.05,
                                memory_capacity=1000,
                                target_update_interval=1,
                                automatic_entropy_tuning=False)

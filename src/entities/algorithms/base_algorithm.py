@@ -22,13 +22,16 @@ class Algorithm(ABC):
         self.environment_helper.reset_environment(test_phase=True)
         next_state = self.environment_helper.get_state(test_phase=True)
         test_timestep: Timestep = self.environment_helper.test_timestep
-        while not (test_timestep.terminated or test_timestep.truncated):
+        for _ in range(1000):
             current_state = torch.clone(next_state)
             action, _ = self.agent.act(current_state, return_dist=True, test_phase=False)
             last_observation, reward, test_timestep.terminated, test_timestep.truncated, info = self.environment_helper.test_environment.step(
                 action.reshape(-1))
-            self.environment_helper.shift_observations(test_phase=True)
-            test_timestep.observation[:, -1] = last_observation
+            if test_timestep.terminated:
+                self.environment_helper.reset_environment(test_phase=True)
+            else:
+                self.environment_helper.shift_observations(test_phase=True)
+                test_timestep.observation[:, -1] = last_observation
             rewards.append(reward)
             next_state = self.environment_helper.get_state(test_phase=True)
             if visualize:
