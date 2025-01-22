@@ -2,7 +2,7 @@ from entities.agents.ppo_agent import PPOAgent
 from entities.agents.soft_actor_critic_agent import SoftActorCriticAgent
 from environments.humanoid.running_gym_sequential_vectorized import EnvironmentHelper
 import torch
-from torch.nn import ELU
+from torch.nn import ELU, Tanh
 from argparse import ArgumentParser
 from utils.logger import Logger
 from utils.io import find_experiment_name
@@ -48,7 +48,7 @@ def main():
         sac_config = SACConfig(max_grad_norm=1.0,
                                gamma=0.99,
                                alpha=0.05,
-                               tau=0.05,
+                               tau=0.005,
                                memory_capacity=1000,
                                target_update_interval=1,
                                automatic_entropy_tuning=False)
@@ -56,7 +56,7 @@ def main():
         network_config = NetworkConfig(input_shape=376,
                                        output_shape=17,
                                        output_max_value=1.0,
-                                       activation_class=ELU,
+                                       activation_class=Tanh,
                                        latent_size=128,
                                        use_bias=True)
         environment_config = EnvironmentConfig(maximum_timesteps=200, num_envs=10, window_length=10)
