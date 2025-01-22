@@ -49,7 +49,7 @@ def main():
                                gamma=0.99,
                                alpha=0.05,
                                tau=0.005,
-                               memory_capacity=1000,
+                               memory_capacity=10000,
                                target_update_interval=1,
                                automatic_entropy_tuning=False)
         agent_config = AgentConfig(sub_action_count=1)
@@ -59,7 +59,9 @@ def main():
                                        activation_class=Tanh,
                                        latent_size=128,
                                        use_bias=True)
-        environment_config = EnvironmentConfig(maximum_timesteps=200, num_envs=10, window_length=10)
+        environment_config = EnvironmentConfig(maximum_timesteps=1000,
+                                               num_envs=10,
+                                               window_length=10)
         dynamic_config = DynamicConfig(0, 0, 0, 0)
         makedirs(experiments_directory, exist_ok=True)
         if experiment_id < 0:  # then create a new one
