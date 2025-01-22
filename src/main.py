@@ -2,7 +2,7 @@ from entities.agents.ppo_agent import PPOAgent
 from entities.agents.soft_actor_critic_agent import SoftActorCriticAgent
 from environments.humanoid.running_gym_sequential_vectorized import EnvironmentHelper
 import torch
-from torch.nn import ELU, Tanh
+from torch.nn import ELU
 from argparse import ArgumentParser
 from utils.logger import Logger
 from utils.io import find_experiment_name
@@ -56,12 +56,10 @@ def main():
         network_config = NetworkConfig(input_shape=376,
                                        output_shape=17,
                                        output_max_value=1.0,
-                                       activation_class=Tanh,
+                                       activation_class=ELU,
                                        latent_size=128,
                                        use_bias=True)
-        environment_config = EnvironmentConfig(maximum_timesteps=1000,
-                                               num_envs=10,
-                                               window_length=10)
+        environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=10, window_length=5)
         dynamic_config = DynamicConfig(0, 0, 0, 0)
         makedirs(experiments_directory, exist_ok=True)
         if experiment_id < 0:  # then create a new one

@@ -35,13 +35,13 @@ class SoftActorCritic(Algorithm):
         run: Run = self.environment_helper.run
         batch_size = run.training_config.batch_size
         memory = memory.view(-1)
-        batches_per_epoch = 4
+        batches_per_timestep = 1
         losses = [[] for i in range(4)]
         idx = torch.randperm(len(memory))
         shuffled_memory = torch.clone(memory)[idx]
         shuffled_memory['reward'] = shuffled_memory['reward'] - shuffled_memory['reward'].mean()
         shuffled_memory['reward'] = (shuffled_memory['reward'] / shuffled_memory['reward'].std())
-        for i in range(batches_per_epoch):
+        for i in range(batches_per_timestep):
             batch = shuffled_memory[int(i * batch_size):int((i + 1) * batch_size)]
             state_batch, next_state_batch, reward_batch, action_batch, mask_batch = batch[
                 'current_state'], batch['next_state'], batch['reward'], batch['action'], batch[
@@ -133,7 +133,7 @@ class SoftActorCritic(Algorithm):
                                                        test_phase=False)
             # 2. train
             if len(self.environment_helper.memory +
-                   sub_memory) > run.training_config.batch_size and timestep % 10 == 0:
+                   sub_memory) > run.training_config.batch_size and timestep % 5 == 0:
                 losses.append(
                     list(
                         self.train(torch.cat(self.environment_helper.memory + sub_memory, dim=1),
