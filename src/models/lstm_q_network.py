@@ -19,7 +19,8 @@ class LSTMQNetwork(nn.Module):
         self.feature_extractor = nn.Sequential(
             nn.LSTM(376, run.network_config.latent_size, bidirectional=True, batch_first=True))
         fully_connected_input_shape = int(run.network_config.latent_size * 2 +
-                                          run.network_config.output_shape)
+                                          run.network_config.output_shape +
+                                          run.network_config.input_shape)
         self.first_network = create_network(
             config,
             input_shape=fully_connected_input_shape,  # due to bidirectional feature extractor
@@ -37,10 +38,12 @@ class LSTMQNetwork(nn.Module):
         # input_tensor = cat([state, action], 1)
         features = self.feature_extractor(state)
         current_timestep_features = features[0][:, -1, :]
+        last_timestep_features = state[:, -1]
         # current_timestep_features = features[0].reshape(len(features), -1)
         current_timestep_features = Run.instance().network_config.activation_class()(
             current_timestep_features)
-        input_tensor = cat([current_timestep_features, action], 1)
+        final_features = cat([current_timestep_features, last_timestep_features], dim=1)
+        input_tensor = cat([final_features, action], 1)
 
         out1, out2 = self.first_network(input_tensor), self.second_network(input_tensor)
         # print(x.mean() , x.min() , x.max())
