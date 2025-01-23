@@ -70,6 +70,8 @@ class SoftActorCritic(Algorithm):
             qf_loss = qf1_loss + qf2_loss
             self.agent.optimizers['online_critic'].zero_grad()
             qf_loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.agent.networks['online_critic'].parameters(),
+                                           Run.instance().ppo_config.max_grad_norm)
             self.agent.optimizers['online_critic'].step()
 
             state_actions, distributions = self.agent.act(state_batch, return_dist=True)
@@ -85,6 +87,8 @@ class SoftActorCritic(Algorithm):
 
             self.agent.optimizers['actor'].zero_grad()
             policy_loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.agent.networks['actor'].parameters(),
+                                           Run.instance().ppo_config.max_grad_norm)
             self.agent.optimizers['actor'].step()
 
             if run.sac_config.automatic_entropy_tuning:

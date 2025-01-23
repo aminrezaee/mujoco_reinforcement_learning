@@ -24,7 +24,7 @@ class LSTMActor(nn.Module):
         }
         self.actor = create_network(
             config,
-            int(Run.instance().network_config.latent_size * 2 *
+            int(Run.instance().network_config.lstm_latent_size * 2 *
                 Run.instance().environment_config.window_length), run.network_config.output_shape,
             False, run.network_config.use_bias, False)
         self.actor_logstd = nn.Parameter(torch.zeros(run.network_config.output_shape))

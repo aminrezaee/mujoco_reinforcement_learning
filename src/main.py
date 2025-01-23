@@ -2,7 +2,7 @@ from entities.agents.ppo_agent import PPOAgent
 from entities.agents.soft_actor_critic_agent import SoftActorCriticAgent
 from environments.humanoid.running_gym_sequential_vectorized import EnvironmentHelper
 import torch
-from torch.nn import ELU
+from torch.nn import ReLU
 from argparse import ArgumentParser
 from utils.logger import Logger
 from utils.io import find_experiment_name
@@ -34,7 +34,7 @@ def main():
         training_config = TrainingConfig(iteration_count=args.iterations,
                                          learning_rate=1e-4,
                                          weight_decay=1e-4,
-                                         batch_size=250,
+                                         batch_size=500,
                                          epochs_per_iteration=1,
                                          minimum_learning_rate=1e-4)
         ppo_config = PPOConfig(max_grad_norm=1.0,
@@ -49,17 +49,21 @@ def main():
                                gamma=0.99,
                                alpha=0.05,
                                tau=0.005,
-                               memory_capacity=10000,
+                               memory_capacity=2000,
                                target_update_interval=1,
                                automatic_entropy_tuning=False)
         agent_config = AgentConfig(sub_action_count=1)
-        network_config = NetworkConfig(input_shape=376,
-                                       output_shape=17,
-                                       output_max_value=1.0,
-                                       activation_class=ELU,
-                                       latent_size=128,
-                                       use_bias=True)
-        environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=10, window_length=5)
+        network_config = NetworkConfig(
+            input_shape=376,
+            output_shape=17,
+            output_max_value=1.0,
+            activation_class=ReLU,
+            num_linear_layers=4,
+            linear_hidden_shapes=[256, 256, 128, 128],
+            num_lstm_layers=1,  # TODO: check two layers lstm
+            lstm_latent_size=128,
+            use_bias=True)
+        environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=5, window_length=5)
         dynamic_config = DynamicConfig(0, 0, 0, 0)
         makedirs(experiments_directory, exist_ok=True)
         if experiment_id < 0:  # then create a new one
