@@ -44,7 +44,10 @@ class NetworkConfig:
     output_shape: int
     output_max_value: float
     activation_class: torch.nn.Module
-    latent_size: int
+    num_linear_layers: int
+    linear_hidden_shapes: list[int]
+    num_lstm_layers: int
+    lstm_latent_size: int
     use_bias: bool
 
 

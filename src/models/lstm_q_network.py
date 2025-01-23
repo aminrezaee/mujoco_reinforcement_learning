@@ -12,13 +12,16 @@ class LSTMQNetwork(nn.Module):
         config = {
             "final_activation": None,
             "activation": run.network_config.activation_class,
-            "hidden_layer_count": 2,
-            "shapes": [128, 64]
+            "hidden_layer_count": run.network_config.num_linear_layers,
+            "shapes": run.network_config.linear_hidden_shapes
         }
 
         self.feature_extractor = nn.Sequential(
-            nn.LSTM(376, run.network_config.latent_size, bidirectional=True, batch_first=True))
-        fully_connected_input_shape = int(run.network_config.latent_size * 2 +
+            nn.LSTM(run.network_config.input_shape,
+                    run.network_config.lstm_latent_size,
+                    bidirectional=True,
+                    batch_first=True))
+        fully_connected_input_shape = int(run.network_config.lstm_latent_size * 2 +
                                           run.network_config.output_shape)
         self.first_network = create_network(
             config,

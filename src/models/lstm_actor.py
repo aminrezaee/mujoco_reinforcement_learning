@@ -9,17 +9,18 @@ class LSTMActor(nn.Module):
 
     def __init__(self):
         super(LSTMActor, self).__init__()
-        self.feature_extractor = nn.LSTM(376,
-                                         Run.instance().network_config.latent_size,
-                                         num_layers=1,
+        run = Run.instance()
+        self.feature_extractor = nn.LSTM(run.network_config.input_shape,
+                                         run.network_config.lstm_latent_size,
+                                         num_layers=run.network_config.num_lstm_layers,
                                          bidirectional=True,
                                          batch_first=True)
         run = Run.instance()
         config = {
             "final_activation": None,
             "activation": run.network_config.activation_class,
-            "hidden_layer_count": 2,
-            "shapes": [128, 64]
+            "hidden_layer_count": run.network_config.num_linear_layers,
+            "shapes": run.network_config.linear_hidden_shapes
         }
         self.actor = create_network(
             config,
