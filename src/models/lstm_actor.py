@@ -15,7 +15,6 @@ class LSTMActor(nn.Module):
                                          num_layers=run.network_config.num_lstm_layers,
                                          bidirectional=True,
                                          batch_first=True)
-        run = Run.instance()
         config = {
             "final_activation": None,
             "activation": run.network_config.activation_class,
@@ -24,9 +23,8 @@ class LSTMActor(nn.Module):
         }
         self.actor = create_network(
             config,
-            int(Run.instance().network_config.lstm_latent_size * 2 *
-                Run.instance().environment_config.window_length), run.network_config.output_shape,
-            False, run.network_config.use_bias, False)
+            int(run.network_config.lstm_latent_size * 2 * run.environment_config.window_length),
+            run.network_config.output_shape, False, run.network_config.use_bias, False)
         self.actor_logstd = nn.Parameter(torch.zeros(run.network_config.output_shape))
         pass
 

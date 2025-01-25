@@ -27,7 +27,7 @@ class LSTMCritic(nn.Module):
                 run.environment_config.window_length),  # duo to bidirectional feature extractor
             output_shape=1,
             normalize_at_the_end=False,
-            use_bias=True)
+            use_bias=run.network_config.use_bias)
 
     def forward(self, x):
         features = self.feature_extractor(x)

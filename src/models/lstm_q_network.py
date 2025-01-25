@@ -28,13 +28,13 @@ class LSTMQNetwork(nn.Module):
             input_shape=fully_connected_input_shape,  # due to bidirectional feature extractor
             output_shape=1,
             normalize_at_the_end=False,
-            use_bias=True)
+            use_bias=run.network_config.use_bias)
         self.second_network = create_network(
             config,
             input_shape=fully_connected_input_shape,  # due to bidirectional feature extractor
             output_shape=1,
             normalize_at_the_end=False,
-            use_bias=True)
+            use_bias=run.network_config.use_bias)
 
     def forward(self, state: Tensor, action: Tensor):
         # input_tensor = cat([state, action], 1)

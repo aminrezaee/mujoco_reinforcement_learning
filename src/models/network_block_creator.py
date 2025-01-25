@@ -17,7 +17,7 @@ class InputNormalization(Module):
 
 def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     torch.nn.init.orthogonal_(layer.weight, std)
-    torch.nn.init.constant_(layer.bias, bias_const)
+    # torch.nn.init.constant_(layer.bias, bias_const)
     return layer
 
 
@@ -61,8 +61,6 @@ class NetworkBlock(Module):
         self.last_layer = Linear(out_shape, output_shape, bias=self.use_bias)
         with torch.no_grad():
             self.last_layer = layer_init(self.last_layer)
-            # if self.use_bias:
-            #     self.last_layer.bias.fill_(0)
         if config["final_activation"] is not None:
             if config["final_activation"] in [Tanh, GELU, ELU]:
                 self.last_layer_activation = config["final_activation"]()
