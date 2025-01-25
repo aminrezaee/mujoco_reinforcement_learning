@@ -63,7 +63,7 @@ def main():
             num_lstm_layers=1,  # TODO: check two layers lstm
             lstm_latent_size=128,
             use_bias=False)
-        environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=2, window_length=25)
+        environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=5, window_length=5)
         dynamic_config = DynamicConfig(0, 0, 0, 0)
         makedirs(experiments_directory, exist_ok=True)
         if experiment_id < 0:  # then create a new one

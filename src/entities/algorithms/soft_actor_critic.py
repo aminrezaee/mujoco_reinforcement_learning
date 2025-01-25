@@ -18,11 +18,8 @@ def hard_update(target, source):
         target_param.data.copy_(param.data)
 
 
-def get_action_log_probs(distributions, next_state_actions):
-    return torch.cat([
-        distributions[j].log_prob(next_state_actions[j]).sum()[None]
-        for j in range(len(next_state_actions))
-    ])[:, None]
+def get_action_log_probs(distributions, state_actions):
+    return distributions.log_prob(state_actions).sum(dim=1)[:, None]
 
 
 class SoftActorCritic(Algorithm):

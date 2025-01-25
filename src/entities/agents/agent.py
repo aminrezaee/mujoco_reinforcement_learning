@@ -31,12 +31,12 @@ class Agent(BaseAgent):
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, List[torch.distributions.Normal]]]:
         means, stds = self.networks['actor'](state)
         batch_size = len(state)
-        distributions = [torch.distributions.Normal(means[i], stds[i]) for i in range(batch_size)]
+        distributions = torch.distributions.Normal(means, stds)
         if test_phase:
             action = [means[i] for i in range(batch_size)]
+            action = torch.cat(action, dim=0)
         else:
-            action = [distributions[i].rsample()[None, :] for i in range(batch_size)]
-        action = torch.cat(action, dim=0)
+            action = distributions.rsample()
         if return_dist:
             return action, distributions
         return action
