@@ -135,9 +135,11 @@ class SoftActorCritic(Algorithm):
                 action, distributions = self.agent.act(current_state,
                                                        return_dist=True,
                                                        test_phase=False)
+            train_interval = int(run.environment_config.maximum_timesteps /
+                                 (run.sac_config.target_update_interval * 2))
             # 2. train
             if len(self.environment_helper.memory +
-                   sub_memory) > run.training_config.batch_size and timestep % 5 == 0:
+                   sub_memory) > run.training_config.batch_size and timestep % train_interval == 0:
                 losses.append(
                     list(
                         self.train(torch.cat(self.environment_helper.memory + sub_memory, dim=1),

@@ -48,9 +48,9 @@ def main():
         sac_config = SACConfig(max_grad_norm=1.0,
                                gamma=0.99,
                                alpha=0.05,
-                               tau=0.005,
+                               tau=0.1,
                                memory_capacity=2000,
-                               target_update_interval=1,
+                               target_update_interval=100,
                                automatic_entropy_tuning=False)
         agent_config = AgentConfig(sub_action_count=1)
         network_config = NetworkConfig(
