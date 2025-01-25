@@ -18,6 +18,7 @@ class Algorithm(ABC):
 
     @torch.no_grad
     def test(self, visualize: bool):
+        self.agent.networks.eval()
         rewards = []
         self.environment_helper.reset_environment(test_phase=True)
         next_state = self.environment_helper.get_state(test_phase=True)
@@ -39,6 +40,7 @@ class Algorithm(ABC):
                 self.environment_helper.images.append(rendered_rgb_image)
         if visualize:
             self.environment_helper.visualize()
+        self.agent.networks.train()
         return sum(rewards) / len(rewards)
 
     def train(self, memory: TensorDict):

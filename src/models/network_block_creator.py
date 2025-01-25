@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor
 from torch.nn.init import xavier_uniform_
-from torch.nn.modules import Dropout, Linear, Module, Sequential, Tanh, GELU, ELU
+from torch.nn.modules import Dropout, Linear, Module, Sequential, Tanh, GELU, ELU, BatchNorm1d
 import numpy as np
 
 
@@ -41,6 +41,7 @@ class NetworkBlock(Module):
             self.use_skip_connections: bool = config['skip_connection']
         self.normalize_at_the_end = normalize_at_the_end
         layers = []
+        layers.append(Dropout(0.4))
         for i in range(self.hidden_layer_count):
             out_shape = config["shapes"][i]
             layer = Linear(input_shape, out_shape, bias=self.use_bias)
@@ -52,11 +53,11 @@ class NetworkBlock(Module):
             if config["activation"] is not None:
                 layers.append(config["activation"]())
                 # layers.append(Dropout(0.1))
-            layers.append(InputNormalization())
+            # layers.append(InputNormalization())
             input_shape = out_shape
-        # layers.append(Dropout(0.2))
-        # if use_batchnorm:
-        #     layers.append(BatchNorm1d(out_shape))
+            # layers.append(Dropout(0.2))
+            if use_batchnorm:
+                layers.append(BatchNorm1d(out_shape))
         self.first_layers = Sequential(*layers)
         self.last_layer = Linear(out_shape, output_shape, bias=self.use_bias)
         with torch.no_grad():
