@@ -24,7 +24,7 @@ class SoftActorCriticAgent(Agent):
         self.optimizers['target_critic'] = torch.optim.Adam(
             self.networks['target_critic'].parameters(), lr=run.training_config.learning_rate)
         if run.sac_config.automatic_entropy_tuning:
-            self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
+            self.log_alpha = torch.zeros(1, requires_grad=True, device=run.device)
             self.optimizers['alpha'] = torch.optim.Adam(
                 [self.log_alpha], lr=Run.instance().training_config.learning_rate)
         # initialize schedulers
