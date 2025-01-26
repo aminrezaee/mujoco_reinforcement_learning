@@ -33,7 +33,7 @@ class SoftActorCritic(Algorithm):
         batch_size = run.training_config.batch_size
         memory = memory.view(-1)
         batches_per_timestep = 1
-        losses = [[] for i in range(4)]
+        losses = [[] for i in range(5)]
         idx = torch.randperm(len(memory))
         shuffled_memory = torch.clone(memory)[idx]
         shuffled_memory['reward'] = shuffled_memory['reward'] - shuffled_memory['reward'].mean()
@@ -113,7 +113,8 @@ class SoftActorCritic(Algorithm):
             losses[1].append(qf2_loss.item())
             losses[2].append(policy_loss.item())
             losses[3].append(min_qf_pi.mean().item())
-        return (sum(losses[j]) / len(losses[j]) for j in range(4))
+            losses[4].append(alpha_loss.item())
+        return (sum(losses[j]) / len(losses[j]) for j in range(5))
 
     def _iterate(self):
         self.environment_helper.reset(release_memory=False)
@@ -180,6 +181,10 @@ class SoftActorCritic(Algorithm):
                 episode=run.dynamic_config.current_episode,
                 log_type=Logger.REWARD_TYPE,
                 print_message=True)
+            Logger.log(f"alpha_loss: {torch.tensor(losses)[:,4].mean()}",
+                       episode=run.dynamic_config.current_episode,
+                       log_type=Logger.REWARD_TYPE,
+                       print_message=True)
         self.environment_helper.memory = (
             sub_memory + self.environment_helper.memory)[:run.sac_config.memory_capacity]
         del sub_memory
