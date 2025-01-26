@@ -48,10 +48,10 @@ def main():
         sac_config = SACConfig(max_grad_norm=1.0,
                                gamma=0.99,
                                alpha=0.05,
-                               tau=0.1,
+                               tau=0.005,
                                memory_capacity=2000,
-                               target_update_interval=100,
-                               automatic_entropy_tuning=False)
+                               target_update_interval=10,
+                               automatic_entropy_tuning=True)
         agent_config = AgentConfig(sub_action_count=1)
         network_config = NetworkConfig(
             input_shape=376,
