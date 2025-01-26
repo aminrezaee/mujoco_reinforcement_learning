@@ -51,10 +51,10 @@ def main():
                                tau=0.005,
                                memory_capacity=2000,
                                target_update_interval=10,
-                               automatic_entropy_tuning=True)
+                               automatic_entropy_tuning=False)
         agent_config = AgentConfig(sub_action_count=1)
         network_config = NetworkConfig(
-            input_shape=376,
+            input_shape=348,
             output_shape=17,
             output_max_value=1.0,
             activation_class=ReLU,

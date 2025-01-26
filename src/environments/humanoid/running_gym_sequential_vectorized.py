@@ -21,10 +21,10 @@ class Timestep:
 class EnvironmentHelper(Helper):
 
     def initialize(self):
-        self.environment = gym.vector.make("Humanoid-v4",
-                                           render_mode="rgb_array",
-                                           num_envs=self.run.environment_config.num_envs)
-        self.test_environment = gym.make("Humanoid-v4", render_mode="rgb_array")
+        self.environment = gym.make_vec("Humanoid-v5",
+                                        render_mode="rgb_array",
+                                        num_envs=self.run.environment_config.num_envs)
+        self.test_environment = gym.make("Humanoid-v5", render_mode="rgb_array")
         self.timestep = Timestep(
             np.zeros((
                 self.run.environment_config.num_envs,
