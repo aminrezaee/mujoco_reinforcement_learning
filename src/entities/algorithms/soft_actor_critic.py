@@ -27,6 +27,7 @@ class SoftActorCritic(Algorithm):
     def __init__(self, environment_helper, agent):
         super().__init__(environment_helper, agent)
         hard_update(self.agent.networks['target_critic'], self.agent.networks['online_critic'])
+        self.alpha = environment_helper.run.sac_config.alpha
 
     def train(self, memory: TensorDict, update_count: int):
         run: Run = self.environment_helper.run
@@ -51,8 +52,7 @@ class SoftActorCritic(Algorithm):
                 qf1_next_target, qf2_next_target = self.agent.networks['target_critic'](
                     next_state_batch, next_state_actions.to(run.device))
                 min_qf_next_target = torch.min(
-                    qf1_next_target,
-                    qf2_next_target) - run.sac_config.alpha * next_state_actions_log_prob
+                    qf1_next_target, qf2_next_target) - self.alpha * next_state_actions_log_prob
                 next_q_value = (reward_batch + mask_batch * run.sac_config.gamma *
                                 (min_qf_next_target)).to(run.dtype)
             qf1, qf2 = self.agent.networks['online_critic'](
@@ -79,7 +79,7 @@ class SoftActorCritic(Algorithm):
             min_qf_pi = torch.min(qf1_pi, qf2_pi)
 
             policy_loss = (
-                (run.sac_config.alpha * actions_log_prob) -
+                (self.alpha * actions_log_prob) -
                 min_qf_pi).mean()  # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
 
             self.agent.optimizers['actor'].zero_grad()
@@ -100,11 +100,11 @@ class SoftActorCritic(Algorithm):
                 alpha_loss.backward()
                 self.agent.optimizers['alpha'].step()
 
-                run.sac_config.alpha = self.agent.log_alpha.exp()
-                alpha_tlogs = run.sac_config.alpha.clone()  # For TensorboardX logs
+                self.alpha = self.agent.log_alpha.exp()
+                alpha_tlogs = self.alpha.clone()  # For TensorboardX logs
             else:
                 alpha_loss = torch.tensor(0.).to(run.device)
-                alpha_tlogs = torch.tensor(run.sac_config.alpha)  # For TensorboardX logs
+                alpha_tlogs = torch.tensor(self.alpha)  # For TensorboardX logs
 
             if update_count % run.sac_config.target_update_interval == 0:
                 soft_update(self.agent.networks['target_critic'],
