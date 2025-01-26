@@ -181,10 +181,11 @@ class SoftActorCritic(Algorithm):
                 episode=run.dynamic_config.current_episode,
                 log_type=Logger.REWARD_TYPE,
                 print_message=True)
-            Logger.log(f"alpha_loss: {torch.tensor(losses)[:,4].mean()}",
-                       episode=run.dynamic_config.current_episode,
-                       log_type=Logger.REWARD_TYPE,
-                       print_message=True)
+            Logger.log(
+                f"alpha_loss: {torch.tensor(losses)[:,4].mean()} , alpha value: {self.alpha}",
+                episode=run.dynamic_config.current_episode,
+                log_type=Logger.REWARD_TYPE,
+                print_message=True)
         self.environment_helper.memory = (
             sub_memory + self.environment_helper.memory)[:run.sac_config.memory_capacity]
         del sub_memory
