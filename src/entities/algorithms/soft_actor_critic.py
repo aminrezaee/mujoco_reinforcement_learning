@@ -38,7 +38,8 @@ class SoftActorCritic(Algorithm):
         idx = torch.randperm(len(memory))
         shuffled_memory = torch.clone(memory)[idx]
         shuffled_memory['reward'] = shuffled_memory['reward'] - shuffled_memory['reward'].mean()
-        shuffled_memory['reward'] = (shuffled_memory['reward'] / shuffled_memory['reward'].std())
+        shuffled_memory['reward'] = (shuffled_memory['reward'] /
+                                     shuffled_memory['reward'].std()) * 10
         for i in range(batches_per_timestep):
             batch = shuffled_memory[int(i * batch_size):int((i + 1) * batch_size)]
             state_batch, next_state_batch, reward_batch, action_batch, mask_batch = batch[
@@ -133,8 +134,8 @@ class SoftActorCritic(Algorithm):
                 action, distributions = self.agent.act(current_state,
                                                        return_dist=True,
                                                        test_phase=False)
-            train_interval = int(run.environment_config.maximum_timesteps /
-                                 (run.sac_config.target_update_interval * 2))
+            train_interval = 5  #int(run.environment_config.maximum_timesteps /
+            #   (run.sac_config.target_update_interval * 2))
             # 2. train
             if len(self.environment_helper.memory +
                    sub_memory) > run.training_config.batch_size and timestep % train_interval == 0:
@@ -181,11 +182,11 @@ class SoftActorCritic(Algorithm):
                 episode=run.dynamic_config.current_episode,
                 log_type=Logger.REWARD_TYPE,
                 print_message=True)
-            Logger.log(
-                f"alpha_loss: {torch.tensor(losses)[:,4].mean()} , alpha value: {self.alpha}",
-                episode=run.dynamic_config.current_episode,
-                log_type=Logger.REWARD_TYPE,
-                print_message=True)
+            # Logger.log(
+            #     f"alpha_loss: {torch.tensor(losses)[:,4].mean()} , alpha value: {self.alpha}",
+            #     episode=run.dynamic_config.current_episode,
+            #     log_type=Logger.REWARD_TYPE,
+            #     print_message=True)
         self.environment_helper.memory = (
             sub_memory + self.environment_helper.memory)[:run.sac_config.memory_capacity]
         del sub_memory

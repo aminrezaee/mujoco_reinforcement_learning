@@ -41,7 +41,7 @@ class NetworkBlock(Module):
             self.use_skip_connections: bool = config['skip_connection']
         self.normalize_at_the_end = normalize_at_the_end
         layers = []
-        layers.append(Dropout(0.4))
+        layers.append(Dropout(0.2))
         for i in range(self.hidden_layer_count):
             out_shape = config["shapes"][i]
             layer = Linear(input_shape, out_shape, bias=self.use_bias)

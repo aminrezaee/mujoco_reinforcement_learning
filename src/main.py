@@ -50,7 +50,7 @@ def main():
                                alpha=0.05,
                                tau=0.005,
                                memory_capacity=2000,
-                               target_update_interval=10,
+                               target_update_interval=1,
                                automatic_entropy_tuning=False)
         agent_config = AgentConfig(sub_action_count=1)
         network_config = NetworkConfig(
@@ -61,7 +61,7 @@ def main():
             num_linear_layers=4,
             linear_hidden_shapes=[256, 256, 128, 128],
             num_lstm_layers=1,  # TODO: check two layers lstm
-            lstm_latent_size=128,
+            lstm_latent_size=64,
             use_bias=True)
         environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=5, window_length=5)
         dynamic_config = DynamicConfig(0, 0, 0, 0)

@@ -28,7 +28,7 @@ class LSTMActor(nn.Module):
         self.actor_logstd = nn.Parameter(torch.zeros(run.network_config.output_shape))
         pass
 
-    def forward(self, x):  # x of shape (batch_size, sequence_length, 376)
+    def forward(self, x):  # x of shape (batch_size, sequence_length, 346)
         run = Run.instance()
         features = self.feature_extractor(x)[0].reshape(
             len(x), -1)  # features of shape (batch_size, sequence_length, 20)
