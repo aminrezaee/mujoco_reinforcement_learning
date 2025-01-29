@@ -1,5 +1,5 @@
 from torch import nn
-from .network_block_creator import create_network
+from models.network_block_creator import create_network
 from entities.features import Run
 import torch
 from memory_profiler import profile

@@ -3,8 +3,6 @@ from entities.agents.agent import Agent
 from dataclasses import dataclass
 import numpy as np
 import torch
-from tensordict import TensorDict
-from utils.logger import Logger
 import gymnasium as gym
 from environments.helper import EnvironmentHelper as Helper
 

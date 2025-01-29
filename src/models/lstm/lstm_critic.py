@@ -1,4 +1,4 @@
-from .network_block_creator import create_network
+from models.network_block_creator import create_network
 from torch import nn
 from entities.features import Run
 
