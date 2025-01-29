@@ -1,11 +1,10 @@
 from .agent import Agent
-from models.lstm_actor import LSTMActor as Actor
-from models.lstm_q_network import LSTMQNetwork
+from models.linear.actor import Actor
+from models.linear.q_network import QNetwork
 import torch
 from entities.features import Run
 from torch.optim.lr_scheduler import ExponentialLR
 from os import path
-from torch.nn import ModuleDict
 
 
 class SoftActorCriticAgent(Agent):
@@ -14,8 +13,8 @@ class SoftActorCriticAgent(Agent):
         run = Run.instance()
         # initialize models
         self.networks['actor'] = Actor()
-        self.networks['online_critic'] = LSTMQNetwork()
-        self.networks['target_critic'] = LSTMQNetwork()
+        self.networks['online_critic'] = QNetwork()
+        self.networks['target_critic'] = QNetwork()
         # initialize optimizers
         self.optimizers['actor'] = torch.optim.Adam(self.networks['actor'].parameters(),
                                                     lr=run.training_config.learning_rate)
