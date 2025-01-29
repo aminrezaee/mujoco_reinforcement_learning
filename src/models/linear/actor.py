@@ -10,7 +10,7 @@ class Actor(nn.Module):
         super(Actor, self).__init__()
         run = Run.instance()
         config = {
-            "final_activation": None,
+            "final_activation": nn.Tanh,
             "activation": run.network_config.activation_class,
             "hidden_layer_count": run.network_config.num_linear_layers,
             "shapes": run.network_config.linear_hidden_shapes
@@ -25,7 +25,7 @@ class Actor(nn.Module):
     def forward(self, x):  # x of shape (batch_size, sequence_length, 346)
         x = x.reshape(len(x), -1)
         run = Run.instance()
-        output = self.actor(x)
+        output = run.network_config.output_max_value * self.actor(x)
         std = self.actor_logstd[:run.network_config.output_shape].exp()
         return output, torch.repeat_interleave(std[None, :], x.shape[0], dim=0)
 
