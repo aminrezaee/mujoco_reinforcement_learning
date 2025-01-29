@@ -17,7 +17,8 @@ class Actor(nn.Module):
         }
         self.actor = create_network(
             config, int(run.network_config.input_shape * run.environment_config.window_length),
-            run.network_config.output_shape, False, run.network_config.use_bias, False)
+            run.network_config.output_shape, False, run.network_config.use_bias,
+            run.network_config.use_batch_norm)
         self.actor_logstd = nn.Parameter(torch.zeros(run.network_config.output_shape))
         pass
 

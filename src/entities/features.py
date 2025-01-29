@@ -49,6 +49,7 @@ class NetworkConfig:
     num_lstm_layers: int
     lstm_latent_size: int
     use_bias: bool
+    use_batch_norm: bool
 
 
 @dataclass

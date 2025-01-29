@@ -22,12 +22,14 @@ class QNetwork(nn.Module):
                                             input_shape=fully_connected_input_shape,
                                             output_shape=1,
                                             normalize_at_the_end=False,
-                                            use_bias=run.network_config.use_bias)
+                                            use_bias=run.network_config.use_bias,
+                                            use_batchnorm=run.network_config.use_batch_norm)
         self.second_network = create_network(config,
                                              input_shape=fully_connected_input_shape,
                                              output_shape=1,
                                              normalize_at_the_end=False,
-                                             use_bias=run.network_config.use_bias)
+                                             use_bias=run.network_config.use_bias,
+                                             use_batchnorm=run.network_config.use_batch_norm)
 
     def forward(self, state: Tensor, action: Tensor):
         input_tensor = cat([state.reshape(len(state), -1), action], 1)
