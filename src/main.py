@@ -2,7 +2,7 @@ from entities.agents.ppo_agent import PPOAgent
 from entities.agents.soft_actor_critic_agent import SoftActorCriticAgent
 from environments.humanoid.running_gym_sequential_vectorized import EnvironmentHelper
 import torch
-from torch.nn import ReLU
+from torch.nn import ReLU, ELU
 from argparse import ArgumentParser
 from utils.logger import Logger
 from utils.io import find_experiment_name
