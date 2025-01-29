@@ -64,7 +64,7 @@ def main():
             lstm_latent_size=64,
             use_bias=True,
             use_batch_norm=False)
-        environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=5, window_length=2)
+        environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=5, window_length=5)
         dynamic_config = DynamicConfig(0, 0, 0, 0)
         makedirs(experiments_directory, exist_ok=True)
         if experiment_id < 0:  # then create a new one

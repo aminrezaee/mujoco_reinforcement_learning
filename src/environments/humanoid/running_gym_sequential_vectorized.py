@@ -61,9 +61,10 @@ class EnvironmentHelper(Helper):
     def get_state(self, test_phase: bool) -> torch.Tensor:
         timestep: Timestep = self.get_using_environment(test_phase).timestep
         next_data = torch.tensor(timestep.observation)
+        normalized_dim = 0 if test_phase else 1
         if self.run.normalize_observations:
-            next_data = next_data - next_data.mean(dim=1).unsqueeze(1)
-            std = next_data.std(dim=1).unsqueeze(1)
+            next_data = next_data - next_data.mean(dim=normalized_dim).unsqueeze(normalized_dim)
+            std = next_data.std(dim=normalized_dim).unsqueeze(normalized_dim)
             std[std == 0] = 1e-8
             next_data = next_data / std
         next_data = next_data.to(Run.instance().dtype)
