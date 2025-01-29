@@ -94,7 +94,7 @@ def main():
                   central_actor=True,
                   normalize_rewards=True,
                   normalize_actions=True,
-                  normalize_observations=True,
+                  normalize_observations=False,
                   sequence_wise_normalization=True,
                   dtype=torch.float32)
     Logger.log("initialize src directory!",
