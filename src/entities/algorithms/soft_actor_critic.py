@@ -127,6 +127,7 @@ class SoftActorCritic(Algorithm):
         sub_memory = []
         update_count = 0
         losses = []
+        trained = False
         for timestep in range(run.environment_config.maximum_timesteps):
             # 1. act
             with torch.no_grad():
@@ -139,6 +140,7 @@ class SoftActorCritic(Algorithm):
             # 2. train
             if len(self.environment_helper.memory +
                    sub_memory) > run.training_config.batch_size and timestep % train_interval == 0:
+                trained = True
                 losses.append(
                     list(
                         self.train(torch.cat(self.environment_helper.memory + sub_memory, dim=1),
@@ -159,7 +161,7 @@ class SoftActorCritic(Algorithm):
                 'next_state':
                 next_state.unsqueeze(1).detach(),
                 'terminated':
-                torch.tensor(self.environment_helper.timestep.terminated[:, None]).to(
+                1 - torch.tensor(self.environment_helper.timestep.terminated[:, None]).to(
                     device).unsqueeze(1).detach()
             }
             sub_memory.append(TensorDict(memory_item, batch_size=(batch_size, 1)))
@@ -190,3 +192,6 @@ class SoftActorCritic(Algorithm):
         self.environment_helper.memory = (
             sub_memory + self.environment_helper.memory)[:run.sac_config.memory_capacity]
         del sub_memory
+        if trained:
+            for scheduler in self.agent.schedulers.values():
+                scheduler.step()
