@@ -38,8 +38,7 @@ class SoftActorCritic(Algorithm):
         idx = torch.randperm(len(memory))
         shuffled_memory = torch.clone(memory)[idx]
         shuffled_memory['reward'] = shuffled_memory['reward'] - shuffled_memory['reward'].mean()
-        shuffled_memory['reward'] = (shuffled_memory['reward'] /
-                                     shuffled_memory['reward'].std()) * 10
+        shuffled_memory['reward'] = (shuffled_memory['reward'] / shuffled_memory['reward'].std())
         for i in range(batches_per_timestep):
             batch = shuffled_memory[int(i * batch_size):int((i + 1) * batch_size)]
             state_batch, next_state_batch, reward_batch, action_batch, mask_batch = batch[
@@ -161,7 +160,7 @@ class SoftActorCritic(Algorithm):
                 'next_state':
                 next_state.unsqueeze(1).detach(),
                 'terminated':
-                1 - torch.tensor(self.environment_helper.timestep.terminated[:, None]).to(
+                ~torch.tensor(self.environment_helper.timestep.terminated[:, None]).to(
                     device).unsqueeze(1).detach()
             }
             sub_memory.append(TensorDict(memory_item, batch_size=(batch_size, 1)))
