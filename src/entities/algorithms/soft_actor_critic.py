@@ -43,7 +43,7 @@ class SoftActorCritic(Algorithm):
             batch = shuffled_memory[int(i * batch_size):int((i + 1) * batch_size)]
             state_batch, next_state_batch, reward_batch, action_batch, mask_batch = batch[
                 'current_state'], batch['next_state'], batch['reward'], batch['action'], batch[
-                    'terminated']
+                    'is_alive']
             with torch.no_grad():
                 next_state_actions, distributions = self.agent.act(next_state_batch,
                                                                    return_dist=True)
@@ -159,7 +159,7 @@ class SoftActorCritic(Algorithm):
                                                              None].to(device).unsqueeze(1).detach(),
                 'next_state':
                 next_state.unsqueeze(1).detach(),
-                'terminated':
+                'is_alive':
                 ~torch.tensor(self.environment_helper.timestep.terminated[:, None]).to(
                     device).unsqueeze(1).detach()
             }
