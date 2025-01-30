@@ -16,7 +16,7 @@ class LSTMActor(nn.Module):
                                          bidirectional=True,
                                          batch_first=True)
         config = {
-            "final_activation": None,
+            "final_activation": nn.Tanh,
             "activation": run.network_config.activation_class,
             "hidden_layer_count": run.network_config.num_linear_layers,
             "shapes": run.network_config.linear_hidden_shapes

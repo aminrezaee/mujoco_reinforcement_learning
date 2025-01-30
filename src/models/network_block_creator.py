@@ -61,7 +61,7 @@ class NetworkBlock(Module):
         self.first_layers = Sequential(*layers)
         self.last_layer = Linear(out_shape, output_shape, bias=self.use_bias)
         with torch.no_grad():
-            self.last_layer = layer_init(self.last_layer)
+            self.last_layer = layer_init(self.last_layer, std=0.01)
         if config["final_activation"] is not None:
             if config["final_activation"] in [Tanh, GELU, ELU]:
                 self.last_layer_activation = config["final_activation"]()
