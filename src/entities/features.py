@@ -50,6 +50,7 @@ class NetworkConfig:
     lstm_latent_size: int
     use_bias: bool
     use_batch_norm: bool
+    feature_extractor: str
 
 
 @dataclass

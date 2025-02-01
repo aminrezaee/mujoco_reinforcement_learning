@@ -6,6 +6,7 @@ from os import makedirs
 import mediapy as media
 from entities.timestep import Timestep
 from gymnasium.core import Env
+import mlflow
 
 
 class EnvironmentHelper(ABC):
@@ -39,6 +40,7 @@ class EnvironmentHelper(ABC):
         path = f"{run.experiment_path}/visualizations/{run.dynamic_config.current_episode}"
         makedirs(path, exist_ok=True)
         media.write_video(f"{path}/video.mp4", self.images, fps=30)
+        mlflow.log_artifact(f"{path}/video.mp4")
 
     def get_using_environment(self, test_phase: bool) -> Env:
         using_environment = self.environment

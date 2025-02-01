@@ -7,6 +7,7 @@ from utils.io import add_episode_to_best_results, remove_epoch_results
 from utils.error_handling_utils import timeit
 import torch
 from entities.timestep import Timestep
+import mlflow
 
 
 class Algorithm(ABC):
@@ -60,6 +61,7 @@ class Algorithm(ABC):
         run = self.environment_helper.run
         visualize = run.dynamic_config.current_episode % 5 == 0
         mean_rewards = self.test(visualize)  # test rollout
+        mlflow.log_metric("test_reward", mean_rewards, step=run.dynamic_config.current_episode)
         self.agent.save()
         if mean_rewards > run.dynamic_config.best_reward:
             self.environment_helper.run.dynamic_config.best_reward = mean_rewards
