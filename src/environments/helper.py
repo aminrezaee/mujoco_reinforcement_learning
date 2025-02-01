@@ -39,8 +39,8 @@ class EnvironmentHelper(ABC):
         run = Run.instance()
         path = f"{run.experiment_path}/visualizations/{run.dynamic_config.current_episode}"
         makedirs(path, exist_ok=True)
-        media.write_video(f"{path}/video.mp4", self.images, fps=30)
-        mlflow.log_artifact(f"{path}/video.mp4")
+        media.write_video(f"{path}/video.gif", self.images, fps=30, codec="gif")
+        mlflow.log_artifact(f"{path}/video.gif")
 
     def get_using_environment(self, test_phase: bool) -> Env:
         using_environment = self.environment
