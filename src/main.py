@@ -1,19 +1,20 @@
 from entities.agents.ppo_agent import PPOAgent
+from entities.agents.soft_actor_critic_agent import SoftActorCriticAgent
 from environments.humanoid.running_gym_sequential_vectorized import EnvironmentHelper
 import torch
-from torch.nn import ELU, Tanh
+from torch.nn import ReLU, ELU
 from argparse import ArgumentParser
 from utils.logger import Logger
 from utils.io import find_experiment_name
 from entities.features import *
-import shutil
+from entities.algorithms.ppo import PPO
+from entities.algorithms.soft_actor_critic import SoftActorCritic
 from os import makedirs, listdir
-import os
 
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--iterations", type=int, default=10000)
+    parser.add_argument("--iterations", type=int, default=3000)
     parser.add_argument("-i", "--experiment_id", default=-1, type=int)
     parser.add_argument("-it", "--resume_iteration", default=-1, type=int)
     parser.add_argument("-n", "--name", default="", type=str)
@@ -33,8 +34,8 @@ def main():
         training_config = TrainingConfig(iteration_count=args.iterations,
                                          learning_rate=1e-4,
                                          weight_decay=1e-4,
-                                         batch_size=250,
-                                         epochs_per_iteration=10,
+                                         batch_size=500,
+                                         epochs_per_iteration=1,
                                          minimum_learning_rate=1e-4)
         ppo_config = PPOConfig(max_grad_norm=1.0,
                                clip_epsilon=0.1,
@@ -44,16 +45,26 @@ def main():
                                advantage_scaler=1e+0,
                                normalize_advantage=True,
                                critic_coeffiecient=1.0)
+        sac_config = SACConfig(max_grad_norm=1.0,
+                               gamma=0.99,
+                               alpha=0.05,
+                               tau=0.005,
+                               memory_capacity=2000,
+                               target_update_interval=1,
+                               automatic_entropy_tuning=False)
         agent_config = AgentConfig(sub_action_count=1)
-        network_config = NetworkConfig(input_shape=376,
-                                       output_shape=17,
-                                       output_max_value=1.0,
-                                       activation_class=ELU,
-                                       latent_size=128,
-                                       use_bias=True)
-        environment_config = EnvironmentConfig(maximum_timesteps=1000,
-                                               num_envs=10,
-                                               window_length=20)
+        network_config = NetworkConfig(
+            input_shape=348,
+            output_shape=17,
+            output_max_value=1.0,
+            activation_class=ReLU,
+            num_linear_layers=4,
+            linear_hidden_shapes=[256, 256, 128, 128],
+            num_lstm_layers=1,  # TODO: check two layers lstm
+            lstm_latent_size=64,
+            use_bias=True,
+            use_batch_norm=False)
+        environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=5, window_length=5)
         dynamic_config = DynamicConfig(0, 0, 0, 0)
         makedirs(experiments_directory, exist_ok=True)
         if experiment_id < 0:  # then create a new one
@@ -70,6 +81,7 @@ def main():
         run = Run(reward_config,
                   training_config,
                   ppo_config,
+                  sac_config,
                   environment_config,
                   agent_config,
                   network_config,
@@ -91,68 +103,18 @@ def main():
                log_type=Logger.TRAINING_TYPE)
     run.save()
     environment_helper = EnvironmentHelper()
-    agent = PPOAgent()
+    modules = dict()
+
+    agent = SoftActorCriticAgent()
     if resume:
         agent.load()
         run.dynamic_config.next_episode()
     makedirs(f"{Run.instance().experiment_path}/networks/best_results", exist_ok=True)
     makedirs(f"{Run.instance().experiment_path}/visualizations/best_results", exist_ok=True)
     current_episode = Run.instance().dynamic_config.current_episode
+    algorithm = SoftActorCritic(environment_helper, agent)
     for i in range(current_episode, run.training_config.iteration_count):
-        iterate(environment_helper, agent, run, i)
-
-
-def iterate(environment_helper: EnvironmentHelper, agent: PPOAgent, run: Run, i: int):
-    Logger.log(f"-------------------------",
-               episode=Run.instance().dynamic_config.current_episode,
-               log_type=Logger.REWARD_TYPE,
-               print_message=True)
-    Logger.log(f"-------------------------",
-               episode=Run.instance().dynamic_config.current_episode,
-               log_type=Logger.REWARD_TYPE,
-               print_message=True)
-    Logger.log(f"starting iteration {i}:",
-               episode=Run.instance().dynamic_config.current_episode,
-               log_type=Logger.REWARD_TYPE,
-               print_message=True)
-    memory = environment_helper.rollout(agent)  # train rollout
-    environment_helper.calculate_advantages(memory)
-    agent.train(memory)
-    visualize = i % 5 == 0
-    mean_rewards = environment_helper.test(agent, visualize)  # test rollout
-    agent.save()
-    if mean_rewards > run.dynamic_config.best_reward:
-        run.dynamic_config.best_reward = mean_rewards
-        Logger.log(f"max reward changed to: {mean_rewards}",
-                   episode=Run.instance().dynamic_config.current_episode,
-                   log_type=Logger.REWARD_TYPE,
-                   print_message=True)
-        add_episode_to_best_results()
-    Logger.log(f"test reward: {mean_rewards}",
-               episode=Run.instance().dynamic_config.current_episode,
-               log_type=Logger.REWARD_TYPE,
-               print_message=True)
-    Run.instance().dynamic_config.next_episode()
-    removing_epoch = int(i - 10)
-
-    if os.path.exists(f"{run.experiment_path}/networks/{removing_epoch}"):
-        shutil.rmtree(f"{run.experiment_path}/networks/{removing_epoch}")
-    # if os.path.exists(f"{run.experiment_path}/visualizations/{removing_epoch}"):
-    #     shutil.rmtree(f"{run.experiment_path}/visualizations/{removing_epoch}")
-    if os.path.exists(f"{run.experiment_path}/debugs/{removing_epoch}"):
-        shutil.rmtree(f"{run.experiment_path}/debugs/{removing_epoch}")
-
-
-def add_episode_to_best_results():
-    run = Run.instance()
-    shutil.copytree(
-        f"{run.experiment_path}/networks/{run.dynamic_config.current_episode}",
-        f"{run.experiment_path}/networks/best_results/{run.dynamic_config.current_episode}")
-    if os.path.exists(f"{run.experiment_path}/visualizations/{run.dynamic_config.current_episode}"):
-        shutil.copytree(
-            f"{run.experiment_path}/visualizations/{run.dynamic_config.current_episode}",
-            f"{run.experiment_path}/visualizations/best_results/{run.dynamic_config.current_episode}"
-        )
+        algorithm.iterate()
 
 
 if __name__ == "__main__":

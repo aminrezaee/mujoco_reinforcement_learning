@@ -1,38 +1,38 @@
 from .agent import Agent
-from entities.features import Run
-from models.lstm_actor import LSTMActor as Actor
-from models.lstm_critic import LSTMCritic as Critic
+from models.lstm.lstm_actor import LSTMActor as Actor
+from models.lstm.lstm_q_network import LSTMQNetwork as QNetwork
 import torch
-from tensordict import TensorDict
-from utils.logger import Logger
-from os import makedirs, path
-import numpy as np
-from torch.nn.functional import huber_loss
+from entities.features import Run
 from torch.optim.lr_scheduler import ExponentialLR
+from os import path
 
 
-class PPOAgent(Agent):
+class SoftActorCriticAgent(Agent):
 
-    def __init__(self):
-        self.actor = Actor()
-        self.critic = Critic()
-        self.run = Run.instance()
-
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(),
-                                                lr=self.run.training_config.learning_rate)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(),
-                                                 lr=self.run.training_config.learning_rate)
-        self.actor_scheduler = ExponentialLR(self.actor_optimizer, gamma=0.999)
-        self.critic_scheduler = ExponentialLR(self.critic_optimizer, gamma=0.999)
-
-    def act(self,
-            state: torch.Tensor,
-            return_dist: bool = False,
-            test_phase: bool = False) -> torch.Tensor:
-        pass
+    def initialize_networks(self):
+        run = Run.instance()
+        # initialize models
+        self.networks['actor'] = Actor()
+        self.networks['online_critic'] = QNetwork()
+        self.networks['target_critic'] = QNetwork()
+        # initialize optimizers
+        self.optimizers['actor'] = torch.optim.Adam(self.networks['actor'].parameters(),
+                                                    lr=run.training_config.learning_rate)
+        self.optimizers['online_critic'] = torch.optim.Adam(
+            self.networks['online_critic'].parameters(), lr=run.training_config.learning_rate)
+        self.optimizers['target_critic'] = torch.optim.Adam(
+            self.networks['target_critic'].parameters(), lr=run.training_config.learning_rate)
+        if run.sac_config.automatic_entropy_tuning:
+            self.log_alpha = torch.zeros(1, requires_grad=True, device=run.device)
+            self.optimizers['alpha'] = torch.optim.Adam(
+                [self.log_alpha], lr=Run.instance().training_config.learning_rate)
+        # initialize schedulers
+        self.schedulers['actor'] = ExponentialLR(self.optimizers['actor'], gamma=0.999)
+        self.schedulers['online_critic'] = ExponentialLR(self.optimizers['online_critic'],
+                                                         gamma=0.999)
+        self.schedulers['target_critic'] = ExponentialLR(self.optimizers['target_critic'],
+                                                         gamma=0.999)
+        return
 
     def get_state_value(self, state):
-        pass
-
-    def train(self, memory: TensorDict):
-        pass
+        return self.networks['critic'](state)

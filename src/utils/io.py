@@ -1,8 +1,9 @@
 import json
 from os import listdir
 from typing import Dict
-
+import shutil
 import yaml
+import os
 
 
 def read_config(yaml_file):
@@ -51,3 +52,20 @@ def _get_dict_name(dictionary: Dict):
             name = name + f"{int(dictionary[key])}"
 
     return name
+
+
+def add_episode_to_best_results(experiment_path: str, current_episode: int):
+    shutil.copytree(f"{experiment_path}/networks/{current_episode}",
+                    f"{experiment_path}/networks/best_results/{current_episode}")
+    if os.path.exists(f"{experiment_path}/visualizations/{current_episode}"):
+        shutil.copytree(f"{experiment_path}/visualizations/{current_episode}",
+                        f"{experiment_path}/visualizations/best_results/{current_episode}")
+
+
+def remove_epoch_results(experiment_path: str, removing_epoch: int):
+    if os.path.exists(f"{experiment_path}/networks/{removing_epoch}"):
+        shutil.rmtree(f"{experiment_path}/networks/{removing_epoch}")
+    # if os.path.exists(f"{run.experiment_path}/visualizations/{removing_epoch}"):
+    #     shutil.rmtree(f"{run.experiment_path}/visualizations/{removing_epoch}")
+    if os.path.exists(f"{experiment_path}/debugs/{removing_epoch}"):
+        shutil.rmtree(f"{experiment_path}/debugs/{removing_epoch}")
