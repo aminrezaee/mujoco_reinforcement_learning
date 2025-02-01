@@ -14,7 +14,7 @@ from os import makedirs, listdir
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--iterations", type=int, default=10000)
+    parser.add_argument("--iterations", type=int, default=3000)
     parser.add_argument("-i", "--experiment_id", default=-1, type=int)
     parser.add_argument("-it", "--resume_iteration", default=-1, type=int)
     parser.add_argument("-n", "--name", default="", type=str)
