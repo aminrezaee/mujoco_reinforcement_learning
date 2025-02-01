@@ -124,7 +124,7 @@ def main():
         "window_length": f"{run.environment_config.window_length}",
         "feature_extractor": run.network_config.feature_extractor,
         "algorithm": algorithm.__class__.__name__,
-        "net_activation": run.network_config.activation_class._get_name(),
+        "net_activation": run.network_config.activation_class.__name__,
         "normalize_observations": f"{run.normalize_observations}",
         "normalize_rewards": f"{run.normalize_rewards}",
         "num_lstm_layers": f"{run.network_config.num_lstm_layers}",
