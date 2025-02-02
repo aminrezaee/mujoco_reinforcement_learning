@@ -58,18 +58,36 @@ class EnvironmentHelper(Helper):
                 environment_timestep.observation[i, :, -1] = last_timestep.observation[i, ...]
         self.rewards.append(self.environment.timestep.reward)
 
+    def _normalize(self, inputs: torch.Tensor) -> torch.Tensor:
+        inputs = inputs - inputs.mean(dim=1).unsqueeze(1)
+        std = inputs.std(dim=1).unsqueeze(1)
+        std[std == 0] = 1
+        inputs /= std
+        return inputs
+
+    def normalize_state(self, state: torch.Tensor) -> torch.Tensor:
+        # normalize positions
+        state[:, :22] = self._normalize(state[:, :22])
+        # normalize velocities
+        state[:, 22:45] = self._normalize(state[:, 22:45])
+        # normalize inertias
+        state[:, 45:175] = self._normalize(state[:, 45:175])
+        # normalize center of mass velocities
+        state[:, 175:253] = self._normalize(state[:, 175:253])
+        # normalize input forces
+        state[:, 253:270] = self._normalize(state[:, 253:270])
+        # normalize forces
+        state[:, 270:] = self._normalize(state[:, 270:])
+        return state
+
     def get_state(self, test_phase: bool) -> torch.Tensor:
         timestep: Timestep = self.get_using_environment(test_phase).timestep
         next_data = torch.tensor(timestep.observation)
-        normalized_dim = 0 if test_phase else 1
-        if self.run.normalize_observations:
-            next_data = next_data - next_data.mean(dim=normalized_dim).unsqueeze(normalized_dim)
-            std = next_data.std(dim=normalized_dim).unsqueeze(normalized_dim)
-            std[std == 0] = 1e-8
-            next_data = next_data / std
-        next_data = next_data.to(Run.instance().dtype)
         if test_phase:
             next_data = next_data[None, :]
+        if self.run.normalize_observations:
+            next_data = self.normalize_state(next_data)
+        next_data = next_data.to(Run.instance().dtype)
         next_data = next_data.permute(0, 2, 1)
         return next_data
 
