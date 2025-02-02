@@ -8,6 +8,7 @@ from utils.error_handling_utils import timeit
 import torch
 from entities.timestep import Timestep
 import mlflow
+from cv2 import resize
 
 
 class Algorithm(ABC):
@@ -38,6 +39,8 @@ class Algorithm(ABC):
             next_state = self.environment_helper.get_state(test_phase=True)
             if visualize:
                 rendered_rgb_image = self.environment_helper.test_environment.render()
+                rendered_rgb_image = resize(rendered_rgb_image,
+                                            tuple(self.environment_helper.run.render_size))
                 self.environment_helper.images.append(rendered_rgb_image)
         if visualize:
             self.environment_helper.visualize()

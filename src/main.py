@@ -37,7 +37,7 @@ def main():
         training_config = TrainingConfig(iteration_count=args.iterations,
                                          learning_rate=1e-4,
                                          weight_decay=1e-4,
-                                         batch_size=500,
+                                         batch_size=250,
                                          epochs_per_iteration=1,
                                          minimum_learning_rate=1e-4)
         ppo_config = PPOConfig(max_grad_norm=1.0,
@@ -68,7 +68,7 @@ def main():
             use_bias=True,
             use_batch_norm=False,
             feature_extractor="LSTM")
-        environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=5, window_length=5)
+        environment_config = EnvironmentConfig(maximum_timesteps=500, num_envs=5, window_length=10)
         dynamic_config = DynamicConfig(0, 0, 0, 0)
         makedirs(experiments_directory, exist_ok=True)
         if experiment_id < 0:  # then create a new one
@@ -100,7 +100,8 @@ def main():
                   normalize_actions=True,
                   normalize_observations=True,
                   sequence_wise_normalization=True,
-                  dtype=torch.float32)
+                  dtype=torch.float32,
+                  render_size=[200, 200])
     Logger.log("initialize src directory!",
                episode=run.dynamic_config.current_episode,
                path=current_experiment_path,

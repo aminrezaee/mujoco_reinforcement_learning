@@ -118,6 +118,7 @@ class Run(metaclass=Singleton):
     normalize_observations: bool
     sequence_wise_normalization: bool
     dtype: torch.dtype
+    render_size: List[int]
 
     def get_name(self):
         dictionary = asdict(self)
