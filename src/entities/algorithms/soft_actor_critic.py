@@ -191,8 +191,8 @@ class SoftActorCritic(Algorithm):
             #     episode=run.dynamic_config.current_episode,
             #     log_type=Logger.REWARD_TYPE,
             #     print_message=True)
-        metrics["train_reward"] = torch.cat(sub_memory, dim=1)['reward'].mean()
-        mlflow.log_metrics(metrics=metrics, step=run.dynamic_config.current_episode)
+            metrics["train_reward"] = torch.cat(sub_memory, dim=1)['reward'].mean()
+            mlflow.log_metrics(metrics=metrics, step=run.dynamic_config.current_episode)
         self.environment_helper.memory = (
             sub_memory + self.environment_helper.memory)[:run.sac_config.memory_capacity]
         del sub_memory
