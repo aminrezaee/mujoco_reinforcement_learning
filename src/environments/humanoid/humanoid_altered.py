@@ -9,7 +9,7 @@ class SymmetricHumanoid(HumanoidEnv):
 
         reward_info["symmetric_reward"] = symmetric_reward
         reward = reward + symmetric_reward
-        return reward, symmetric_reward
+        return reward, reward_info
         """
         The body parts are:
 
