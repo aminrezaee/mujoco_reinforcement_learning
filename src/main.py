@@ -37,7 +37,7 @@ def main():
         training_config = TrainingConfig(iteration_count=args.iterations,
                                          learning_rate=1e-4,
                                          weight_decay=1e-4,
-                                         batch_size=250,
+                                         batch_size=500,
                                          epochs_per_iteration=1,
                                          minimum_learning_rate=1e-4)
         ppo_config = PPOConfig(max_grad_norm=1.0,
@@ -52,7 +52,7 @@ def main():
                                gamma=0.99,
                                alpha=0.05,
                                tau=0.005,
-                               memory_capacity=2000,
+                               memory_capacity=999,
                                target_update_interval=1,
                                automatic_entropy_tuning=False)
         agent_config = AgentConfig(sub_action_count=1)
@@ -64,7 +64,7 @@ def main():
             num_linear_layers=4,
             linear_hidden_shapes=[256, 256, 128, 128],
             num_lstm_layers=1,  # TODO: check two layers lstm
-            lstm_latent_size=64,
+            lstm_latent_size=256,
             use_bias=True,
             use_batch_norm=False,
             feature_extractor="LSTM")
