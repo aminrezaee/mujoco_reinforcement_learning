@@ -56,18 +56,17 @@ def main():
                                target_update_interval=1,
                                automatic_entropy_tuning=False)
         agent_config = AgentConfig(sub_action_count=1)
-        network_config = NetworkConfig(
-            input_shape=348,
-            output_shape=17,
-            output_max_value=1.0,
-            activation_class=ReLU,
-            num_linear_layers=4,
-            linear_hidden_shapes=[256, 256, 128, 128],
-            num_lstm_layers=1,  # TODO: check two layers lstm
-            lstm_latent_size=256,
-            use_bias=True,
-            use_batch_norm=False,
-            feature_extractor="LSTM")
+        network_config = NetworkConfig(input_shape=348,
+                                       output_shape=17,
+                                       output_max_value=1.0,
+                                       activation_class=ReLU,
+                                       num_linear_layers=4,
+                                       linear_hidden_shapes=[256, 256, 128, 128],
+                                       num_lstm_layers=1,
+                                       lstm_latent_size=256,
+                                       use_bias=True,
+                                       use_batch_norm=False,
+                                       feature_extractor="LSTM")
         environment_config = EnvironmentConfig(maximum_timesteps=500, num_envs=5, window_length=5)
         dynamic_config = DynamicConfig(0, 0, 0, 0)
         makedirs(experiments_directory, exist_ok=True)
