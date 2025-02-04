@@ -10,9 +10,12 @@ from entities.features import *
 from entities.algorithms.ppo import PPO
 from entities.algorithms.soft_actor_critic import SoftActorCritic
 from os import makedirs, listdir
+import mlflow
 
 
 def main():
+    mlflow.set_tracking_uri(uri="http://127.0.0.1:5000")
+    mlflow.pytorch.autolog(log_every_n_epoch=1)
     parser = ArgumentParser()
     parser.add_argument("--iterations", type=int, default=3000)
     parser.add_argument("-i", "--experiment_id", default=-1, type=int)
@@ -34,7 +37,7 @@ def main():
         training_config = TrainingConfig(iteration_count=args.iterations,
                                          learning_rate=1e-4,
                                          weight_decay=1e-4,
-                                         batch_size=500,
+                                         batch_size=1000,
                                          epochs_per_iteration=1,
                                          minimum_learning_rate=1e-4)
         ppo_config = PPOConfig(max_grad_norm=1.0,
@@ -49,22 +52,22 @@ def main():
                                gamma=0.99,
                                alpha=0.05,
                                tau=0.005,
-                               memory_capacity=2000,
+                               memory_capacity=999,
                                target_update_interval=1,
                                automatic_entropy_tuning=False)
         agent_config = AgentConfig(sub_action_count=1)
-        network_config = NetworkConfig(
-            input_shape=348,
-            output_shape=17,
-            output_max_value=1.0,
-            activation_class=ReLU,
-            num_linear_layers=4,
-            linear_hidden_shapes=[256, 256, 128, 128],
-            num_lstm_layers=1,  # TODO: check two layers lstm
-            lstm_latent_size=64,
-            use_bias=True,
-            use_batch_norm=False)
-        environment_config = EnvironmentConfig(maximum_timesteps=1000, num_envs=5, window_length=5)
+        network_config = NetworkConfig(input_shape=348,
+                                       output_shape=17,
+                                       output_max_value=1.0,
+                                       activation_class=ReLU,
+                                       num_linear_layers=4,
+                                       linear_hidden_shapes=[256, 256, 128, 128],
+                                       num_lstm_layers=1,
+                                       lstm_latent_size=256,
+                                       use_bias=True,
+                                       use_batch_norm=False,
+                                       feature_extractor="LSTM")
+        environment_config = EnvironmentConfig(maximum_timesteps=500, num_envs=5, window_length=5)
         dynamic_config = DynamicConfig(0, 0, 0, 0)
         makedirs(experiments_directory, exist_ok=True)
         if experiment_id < 0:  # then create a new one
@@ -96,7 +99,8 @@ def main():
                   normalize_actions=True,
                   normalize_observations=True,
                   sequence_wise_normalization=True,
-                  dtype=torch.float32)
+                  dtype=torch.float32,
+                  render_size=[200, 200])
     Logger.log("initialize src directory!",
                episode=run.dynamic_config.current_episode,
                path=current_experiment_path,
@@ -113,8 +117,23 @@ def main():
     makedirs(f"{Run.instance().experiment_path}/visualizations/best_results", exist_ok=True)
     current_episode = Run.instance().dynamic_config.current_episode
     algorithm = SoftActorCritic(environment_helper, agent)
-    for i in range(current_episode, run.training_config.iteration_count):
-        algorithm.iterate()
+    run_tags = {
+        "lr": f"{run.training_config.learning_rate}",
+        "batch_size": f"{run.training_config.batch_size}",
+        "num_envs": f"{run.environment_config.num_envs}",
+        "window_length": f"{run.environment_config.window_length}",
+        "feature_extractor": run.network_config.feature_extractor,
+        "algorithm": algorithm.__class__.__name__,
+        "net_activation": run.network_config.activation_class.__name__,
+        "normalize_observations": f"{run.normalize_observations}",
+        "normalize_rewards": f"{run.normalize_rewards}",
+        "num_lstm_layers": f"{run.network_config.num_lstm_layers}",
+        "lstm_latent_size": f"{run.network_config.lstm_latent_size}",
+        "num_linear_layers": f"{run.network_config.num_linear_layers}",
+    }
+    with mlflow.start_run(tags=run_tags) as mlflow_run:
+        for i in range(current_episode, run.training_config.iteration_count):
+            algorithm.iterate()
 
 
 if __name__ == "__main__":

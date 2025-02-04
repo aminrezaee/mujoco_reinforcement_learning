@@ -6,6 +6,7 @@ import numpy as np
 from torch.nn.functional import huber_loss, mse_loss
 from utils.logger import Logger
 from torch.nn import Module
+import mlflow
 
 
 def soft_update(target: Module, source: Module, tau):
@@ -164,15 +165,17 @@ class SoftActorCritic(Algorithm):
                     device).unsqueeze(1).detach()
             }
             sub_memory.append(TensorDict(memory_item, batch_size=(batch_size, 1)))
-        Logger.log(f"episode ended with {len(sub_memory)} timesteps",
-                   episode=run.dynamic_config.current_episode,
-                   log_type=Logger.REWARD_TYPE,
-                   print_message=False)
         Logger.log(f"total episode reward: {torch.cat(sub_memory, dim=1)['reward'].mean()}",
                    episode=run.dynamic_config.current_episode,
                    log_type=Logger.REWARD_TYPE,
                    print_message=True)
         if len(losses) > 0:
+            metrics = {
+                "qf1_loss": torch.tensor(losses)[:, 0].mean(),
+                "qf2_loss": torch.tensor(losses)[:, 1].mean(),
+                "policy_loss": torch.tensor(losses)[:, 2].mean(),
+                "min_qf": torch.tensor(losses)[:, 3].mean(),
+            }
             Logger.log(
                 f"qf1_loss: {torch.tensor(losses)[:,0].mean()} , qf2_loss: {torch.tensor(losses)[:,1].mean()}",
                 episode=run.dynamic_config.current_episode,
@@ -188,6 +191,8 @@ class SoftActorCritic(Algorithm):
             #     episode=run.dynamic_config.current_episode,
             #     log_type=Logger.REWARD_TYPE,
             #     print_message=True)
+            metrics["train_reward"] = torch.cat(sub_memory, dim=1)['reward'].mean()
+            mlflow.log_metrics(metrics=metrics, step=run.dynamic_config.current_episode)
         self.environment_helper.memory = (
             sub_memory + self.environment_helper.memory)[:run.sac_config.memory_capacity]
         del sub_memory

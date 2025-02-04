@@ -50,6 +50,7 @@ class NetworkConfig:
     lstm_latent_size: int
     use_bias: bool
     use_batch_norm: bool
+    feature_extractor: str
 
 
 @dataclass
@@ -117,6 +118,7 @@ class Run(metaclass=Singleton):
     normalize_observations: bool
     sequence_wise_normalization: bool
     dtype: torch.dtype
+    render_size: List[int]
 
     def get_name(self):
         dictionary = asdict(self)
