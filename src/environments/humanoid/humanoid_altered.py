@@ -30,9 +30,9 @@ class Humanoid(HumanoidEnv):
 
     def _get_rew(self, x_velocity, action):
         original_reward = super()._get_rew(x_velocity, action)
-        assymetric_reward = self.assymetric_reward()
+        assymetric_reward = self.symmetric_reward()
         self.data
         return original_reward + assymetric_reward
 
-    def assymetric_reward(self):
+    def symmetric_reward(self):
         return 0

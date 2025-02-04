@@ -37,7 +37,7 @@ def main():
         training_config = TrainingConfig(iteration_count=args.iterations,
                                          learning_rate=1e-4,
                                          weight_decay=1e-4,
-                                         batch_size=500,
+                                         batch_size=1000,
                                          epochs_per_iteration=1,
                                          minimum_learning_rate=1e-4)
         ppo_config = PPOConfig(max_grad_norm=1.0,
