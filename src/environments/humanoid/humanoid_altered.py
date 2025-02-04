@@ -1,38 +1,41 @@
 from gymnasium.envs.mujoco.humanoid_v5 import HumanoidEnv
 
 
-class Humanoid(HumanoidEnv):
-
-    def __init__(self,
-                 xml_file="humanoid.xml",
-                 frame_skip=5,
-                 default_camera_config=...,
-                 forward_reward_weight=1.25,
-                 ctrl_cost_weight=0.1,
-                 contact_cost_weight=5e-7,
-                 contact_cost_range=...,
-                 healthy_reward=5,
-                 terminate_when_unhealthy=True,
-                 healthy_z_range=...,
-                 reset_noise_scale=0.01,
-                 exclude_current_positions_from_observation=True,
-                 include_cinert_in_observation=True,
-                 include_cvel_in_observation=True,
-                 include_qfrc_actuator_in_observation=True,
-                 include_cfrc_ext_in_observation=True,
-                 **kwargs):
-        super().__init__(xml_file, frame_skip, default_camera_config, forward_reward_weight,
-                         ctrl_cost_weight, contact_cost_weight, contact_cost_range, healthy_reward,
-                         terminate_when_unhealthy, healthy_z_range, reset_noise_scale,
-                         exclude_current_positions_from_observation, include_cinert_in_observation,
-                         include_cvel_in_observation, include_qfrc_actuator_in_observation,
-                         include_cfrc_ext_in_observation, **kwargs)
+class SymmetricHumanoid(HumanoidEnv):
 
     def _get_rew(self, x_velocity, action):
-        original_reward = super()._get_rew(x_velocity, action)
-        assymetric_reward = self.symmetric_reward()
-        self.data
-        return original_reward + assymetric_reward
+        reward, reward_info = super()._get_rew(x_velocity, action)
+        symmetric_reward = self.symmetric_reward()
+
+        reward_info["symmetric_reward"] = symmetric_reward
+        reward = reward + symmetric_reward
+        return reward, symmetric_reward
+        """
+        The body parts are:
+
+    | body part       | id (for `v2`, `v3`, `v4)` | id (for `v5`) |
+    |  -------------  |  ---   |  ---  |
+    | worldbody (note: all values are constant 0) | 0  |excluded|
+    | torso           |1  | 0      |
+    | lwaist          |2  | 1      |
+    | pelvis          |3  | 2      |
+    | right_thigh     |4  | 3      |
+    | right_sin       |5  | 4      |
+    | right_foot      |6  | 5      |
+    | left_thigh      |7  | 6      |
+    | left_sin        |8  | 7      |
+    | left_foot       |9  | 8      |
+    | right_upper_arm |10 | 9      |
+    | right_lower_arm |11 | 10     |
+    | left_upper_arm  |12 | 11     |
+    | left_lower_arm  |13 | 12     |
+        """
 
     def symmetric_reward(self):
-        return 0
+        mass_offsets = self.data.cinert[1:, 6:8]  # 13 body parts, 2 mass offsets (x, y)
+        symmetric_foot = -abs(mass_offsets[5] + mass_offsets[8]).sum()
+        symmetric_upper_arm = -abs(mass_offsets[9] + mass_offsets[11]).sum()
+        symmetric_lower_arm = -abs(mass_offsets[10] + mass_offsets[12]).sum()
+        symmetric_thigh = -abs(mass_offsets[3] + mass_offsets[6]).sum()
+        symmetric_pelvis = -abs(mass_offsets[2]).sum()
+        return symmetric_foot + symmetric_upper_arm + symmetric_lower_arm + symmetric_thigh + symmetric_pelvis

@@ -11,6 +11,10 @@ from entities.algorithms.ppo import PPO
 from entities.algorithms.soft_actor_critic import SoftActorCritic
 from os import makedirs, listdir
 import mlflow
+from environments.humanoid.humanoid_altered import SymmetricHumanoid
+import gymnasium as gym
+
+gym.register("SymmetricHumanoid-v5", entry_point=SymmetricHumanoid)
 
 
 def main():
