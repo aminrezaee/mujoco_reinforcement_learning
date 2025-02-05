@@ -105,11 +105,10 @@ class PPO(Algorithm):
                 if len(batch) != batch_size:
                     continue
                 sub_actions = batch['action']
-                joint_index = np.random.randint(0, Run.instance().agent_config.sub_action_count)
                 _, distributions = self.agent.act(batch['current_state'], return_dist=True)
-                action_log_prob = batch['action_log_prob'][:, joint_index]
+                action_log_prob = batch['action_log_prob']
 
-                new_action_log_prob = distributions.log_prob(sub_actions).sum()[None]
+                new_action_log_prob = distributions.log_prob(sub_actions).sum(dim=1)
                 # critic loss
                 current_state_value = self.agent.get_state_value(batch['current_state'])
                 current_state_value_target = batch['current_state_value_target']
@@ -121,7 +120,7 @@ class PPO(Algorithm):
                 self.agent.optimizers['critic'].step()
                 # actor loss
                 advantage = batch['advantage']
-                total_entropy = sum([d.entropy().mean() for d in distributions])
+                total_entropy = distributions.entropy().mean()
                 ratio = (new_action_log_prob - action_log_prob).exp()[:, None]
                 # print(ratio.min() , ratio.max())
                 surrogate1 = ratio * advantage

@@ -113,14 +113,14 @@ def main():
     environment_helper = EnvironmentHelper()
     modules = dict()
 
-    agent = SoftActorCriticAgent()
+    agent = PPOAgent()
     if resume:
         agent.load()
         run.dynamic_config.next_episode()
     makedirs(f"{Run.instance().experiment_path}/networks/best_results", exist_ok=True)
     makedirs(f"{Run.instance().experiment_path}/visualizations/best_results", exist_ok=True)
     current_episode = Run.instance().dynamic_config.current_episode
-    algorithm = SoftActorCritic(environment_helper, agent)
+    algorithm = PPO(environment_helper, agent)
     run_tags = {
         "lr": f"{run.training_config.learning_rate}",
         "batch_size": f"{run.training_config.batch_size}",
