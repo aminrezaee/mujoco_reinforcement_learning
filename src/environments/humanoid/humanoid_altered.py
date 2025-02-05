@@ -5,8 +5,7 @@ class SymmetricHumanoid(HumanoidEnv):
 
     def _get_rew(self, x_velocity, action):
         reward, reward_info = super()._get_rew(x_velocity, action)
-        symmetric_reward = self.symmetric_reward()
-
+        symmetric_reward = self.symmetric_reward() * 0.1
         reward_info["symmetric_reward"] = symmetric_reward
         reward = reward + symmetric_reward
         return reward, reward_info
