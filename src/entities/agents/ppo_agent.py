@@ -1,6 +1,6 @@
 from .agent import Agent
-from models.actor import Actor
-from models.critic import Critic
+from models.lstm.lstm_actor import LSTMActor as Actor
+from models.lstm.lstm_critic import LSTMCritic as Critic
 import torch
 from entities.features import Run
 from torch.optim.lr_scheduler import ExponentialLR
