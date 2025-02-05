@@ -23,10 +23,8 @@ class PPO(Algorithm):
             sub_actions, distributions = self.agent.act(current_state,
                                                         return_dist=True,
                                                         test_phase=False)
-            action_log_prob = [
-                distributions[i].log_prob(sub_actions[i]).sum() for i in range(batch_size)
-            ]
-            self.environment_helper.step(torch.cat(sub_actions, dim=0))
+            action_log_prob = distributions.log_prob(sub_actions).sum(dim=1)
+            self.environment_helper.step(sub_actions)
             next_state = self.environment_helper.get_state(test_phase=False)
             next_state_value = self.agent.get_state_value(next_state)
             memory_item = {
@@ -37,18 +35,16 @@ class PPO(Algorithm):
                 'next_state_value':
                 next_state_value.unsqueeze(1),
                 'action':
-                torch.cat(sub_actions, dim=0).unsqueeze(1),
+                sub_actions.unsqueeze(1),
                 'action_log_prob':
-                torch.tensor(action_log_prob).to(device)[:, None].unsqueeze(1),
+                action_log_prob.to(device).unsqueeze(1),
                 'reward':
                 torch.tensor(self.environment_helper.timestep.reward)[:,
                                                                       None].to(device).unsqueeze(1),
                 'terminated':
-                torch.tensor(
-                    self.environment_helper.timestep.terminated[:, None]).to(device).unsqueeze(1),
+                torch.tensor(self.environment_helper.timestep.terminated[:, None]).to(device),
                 'truncated':
-                torch.tensor(
-                    self.environment_helper.timestep.truncated[:, None]).to(device).unsqueeze(1)
+                torch.tensor(self.environment_helper.timestep.truncated[:, None]).to(device)
             }
             self.environment_helper.memory.append(
                 TensorDict(memory_item, batch_size=(batch_size, 1)))
@@ -71,16 +67,17 @@ class PPO(Algorithm):
             # rewards = rewards * 0.1
             rewards = rewards - rewards.mean(dim=1).unsqueeze(1)
         #     rewards = rewards / rewards.std(dim=1).unsqueeze(1)
-        terminated = memory['terminated']
-        done = memory['truncated']
-        done[:, -1, 0] = True
+        terminated = memory['terminated'].unsqueeze(-1)
+        done = torch.clone(terminated)
+        done[:, -1, :] = True  # in last timestep the trajectory ended.
+
         current_state_values = memory['current_state_value']
         next_state_values = memory['next_state_value']
         advantage, value_target = generalized_advantage_estimate(run.ppo_config.gamma,
                                                                  run.ppo_config.lmbda,
                                                                  current_state_values,
-                                                                 next_state_values, rewards,
-                                                                 terminated, done)
+                                                                 next_state_values, rewards, done,
+                                                                 terminated)
         if run.ppo_config.normalize_advantage:
             advantage = advantage - advantage.mean(dim=1).unsqueeze(1)
             # advantage = advantage / advantage.std(dim=1).unsqueeze(1)
@@ -112,8 +109,7 @@ class PPO(Algorithm):
                 _, distributions = self.agent.act(batch['current_state'], return_dist=True)
                 action_log_prob = batch['action_log_prob'][:, joint_index]
 
-                new_action_log_prob = torch.cat(
-                    [distributions.log_prob(sub_actions).sum()[None] for i in range(batch_size)])
+                new_action_log_prob = distributions.log_prob(sub_actions).sum()[None]
                 # critic loss
                 current_state_value = self.agent.get_state_value(batch['current_state'])
                 current_state_value_target = batch['current_state_value_target']
