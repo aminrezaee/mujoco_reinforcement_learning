@@ -109,15 +109,11 @@ class PPO(Algorithm):
                     continue
                 sub_actions = batch['action']
                 joint_index = np.random.randint(0, Run.instance().agent_config.sub_action_count)
-                mean, std = self.agent.networks['actor'](batch['current_state'])
-                distributions = [
-                    torch.distributions.Normal(mean[i], std[i]) for i in range(batch_size)
-                ]
+                _, distributions = self.agent.act(batch['current_state'], return_dist=True)
                 action_log_prob = batch['action_log_prob'][:, joint_index]
 
-                new_action_log_prob = torch.cat([
-                    distributions[i].log_prob(sub_actions[i]).sum()[None] for i in range(batch_size)
-                ])
+                new_action_log_prob = torch.cat(
+                    [distributions.log_prob(sub_actions).sum()[None] for i in range(batch_size)])
                 # critic loss
                 current_state_value = self.agent.get_state_value(batch['current_state'])
                 current_state_value_target = batch['current_state_value_target']
