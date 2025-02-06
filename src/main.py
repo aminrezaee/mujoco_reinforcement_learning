@@ -41,7 +41,7 @@ def main():
         training_config = TrainingConfig(iteration_count=args.iterations,
                                          learning_rate=1e-4,
                                          weight_decay=1e-4,
-                                         batch_size=500,
+                                         batch_size=4096,
                                          epochs_per_iteration=1,
                                          minimum_learning_rate=1e-4)
         ppo_config = PPOConfig(max_grad_norm=1.0,
@@ -49,8 +49,8 @@ def main():
                                gamma=0.99,
                                lmbda=0.98,
                                entropy_eps=1e-4,
-                               advantage_scaler=1e+0,
-                               normalize_advantage=True,
+                               advantage_scaler=1e0,
+                               normalize_advantage=False,
                                critic_coeffiecient=1.0)
         sac_config = SACConfig(max_grad_norm=1.0,
                                gamma=0.99,
@@ -71,7 +71,7 @@ def main():
                                        use_bias=True,
                                        use_batch_norm=False,
                                        feature_extractor="LSTM")
-        environment_config = EnvironmentConfig(maximum_timesteps=500, num_envs=5, window_length=5)
+        environment_config = EnvironmentConfig(maximum_timesteps=1024, num_envs=25, window_length=5)
         dynamic_config = DynamicConfig(0, 0, 0, 0)
         makedirs(experiments_directory, exist_ok=True)
         if experiment_id < 0:  # then create a new one
@@ -99,7 +99,7 @@ def main():
                   verbose=False,
                   central_critic=True,
                   central_actor=True,
-                  normalize_rewards=True,
+                  normalize_rewards=False,
                   normalize_actions=True,
                   normalize_observations=True,
                   sequence_wise_normalization=True,

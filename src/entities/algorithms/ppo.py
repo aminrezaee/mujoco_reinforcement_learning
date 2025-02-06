@@ -66,7 +66,7 @@ class PPO(Algorithm):
         if run.normalize_rewards:
             # rewards = rewards * 0.1
             rewards = rewards - rewards.mean(dim=1).unsqueeze(1)
-        #     rewards = rewards / rewards.std(dim=1).unsqueeze(1)
+            rewards = (rewards / rewards.std(dim=1).unsqueeze(1)) * run.ppo_config.advantage_scaler
         terminated = memory['terminated'].unsqueeze(-1)
         done = torch.clone(terminated)
         done[:, -1, :] = True  # in last timestep the trajectory ended.
@@ -80,10 +80,12 @@ class PPO(Algorithm):
                                                                  terminated)
         if run.ppo_config.normalize_advantage:
             advantage = advantage - advantage.mean(dim=1).unsqueeze(1)
-            # advantage = advantage / advantage.std(dim=1).unsqueeze(1)
+            advantage = (advantage /
+                         advantage.std(dim=1).unsqueeze(1)) * run.ppo_config.advantage_scaler
 
             value_target = value_target - value_target.mean(dim=1).unsqueeze(1)
-            # value_target = value_target / value_target.std(dim=1).unsqueeze(1)
+            value_target = (value_target /
+                            value_target.std(dim=1).unsqueeze(1)) * run.ppo_config.advantage_scaler
 
         memory['current_state_value_target'] = value_target
         memory['advantage'] = advantage
@@ -112,9 +114,9 @@ class PPO(Algorithm):
                 # critic loss
                 current_state_value = self.agent.get_state_value(batch['current_state'])
                 current_state_value_target = batch['current_state_value_target']
-                critic_loss: torch.Tensor = mse_loss(current_state_value,
-                                                     current_state_value_target,
-                                                     reduction='mean')
+                critic_loss: torch.Tensor = huber_loss(current_state_value,
+                                                       current_state_value_target,
+                                                       reduction='mean')
                 self.agent.optimizers['critic'].zero_grad()
                 critic_loss.backward()
                 self.agent.optimizers['critic'].step()
