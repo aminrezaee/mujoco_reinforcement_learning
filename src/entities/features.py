@@ -51,6 +51,7 @@ class NetworkConfig:
     use_bias: bool
     use_batch_norm: bool
     feature_extractor: str
+    last_layer_std: float
 
 
 @dataclass

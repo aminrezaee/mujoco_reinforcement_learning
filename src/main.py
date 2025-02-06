@@ -39,11 +39,11 @@ def main():
     else:
         reward_config = RewardConfig()
         training_config = TrainingConfig(iteration_count=args.iterations,
-                                         learning_rate=1e-4,
+                                         learning_rate=1e-5,
                                          weight_decay=1e-4,
                                          batch_size=4096,
-                                         epochs_per_iteration=1,
-                                         minimum_learning_rate=1e-4)
+                                         epochs_per_iteration=10,
+                                         minimum_learning_rate=1e-5)
         ppo_config = PPOConfig(max_grad_norm=1.0,
                                clip_epsilon=0.1,
                                gamma=0.99,
@@ -70,7 +70,8 @@ def main():
                                        lstm_latent_size=256,
                                        use_bias=True,
                                        use_batch_norm=False,
-                                       feature_extractor="LSTM")
+                                       feature_extractor="LSTM",
+                                       last_layer_std=0.01)
         environment_config = EnvironmentConfig(maximum_timesteps=1024, num_envs=25, window_length=5)
         dynamic_config = DynamicConfig(0, 0, 0, 0)
         makedirs(experiments_directory, exist_ok=True)

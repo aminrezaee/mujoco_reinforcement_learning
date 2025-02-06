@@ -30,6 +30,7 @@ class NetworkBlock(Module):
                  normalize_at_the_end: bool,
                  use_bias: bool,
                  use_batchnorm=False,
+                 last_layer_std=0.01,
                  *args,
                  **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -61,7 +62,7 @@ class NetworkBlock(Module):
         self.first_layers = Sequential(*layers)
         self.last_layer = Linear(out_shape, output_shape, bias=self.use_bias)
         with torch.no_grad():
-            self.last_layer = layer_init(self.last_layer, std=0.01)
+            self.last_layer = layer_init(self.last_layer, std=last_layer_std)
         if config["final_activation"] is not None:
             if config["final_activation"] in [Tanh, GELU, ELU]:
                 self.last_layer_activation = config["final_activation"]()
@@ -90,10 +91,12 @@ def create_network(config,
                    output_shape,
                    normalize_at_the_end: bool,
                    use_bias,
-                   use_batchnorm=False):
+                   use_batchnorm=False,
+                   last_layer_std=0.01):
     return NetworkBlock(config,
                         input_shape,
                         output_shape,
                         normalize_at_the_end=normalize_at_the_end,
                         use_bias=use_bias,
-                        use_batchnorm=use_batchnorm)
+                        use_batchnorm=use_batchnorm,
+                        last_layer_std=last_layer_std)

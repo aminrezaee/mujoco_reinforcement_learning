@@ -21,10 +21,14 @@ class LSTMActor(nn.Module):
             "hidden_layer_count": run.network_config.num_linear_layers,
             "shapes": run.network_config.linear_hidden_shapes
         }
-        self.actor = create_network(
-            config,
-            int(run.network_config.lstm_latent_size * 2 * run.environment_config.window_length),
-            run.network_config.output_shape, False, run.network_config.use_bias, False)
+        self.actor = create_network(config,
+                                    int(run.network_config.lstm_latent_size * 2 *
+                                        run.environment_config.window_length),
+                                    run.network_config.output_shape,
+                                    False,
+                                    run.network_config.use_bias,
+                                    False,
+                                    last_layer_std=run.network_config.last_layer_std)
         self.actor_logstd = nn.Parameter(torch.zeros(run.network_config.output_shape))
         pass
 

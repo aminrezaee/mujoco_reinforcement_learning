@@ -130,9 +130,9 @@ class PPO(Algorithm):
                                          1.0 + Run.instance().ppo_config.clip_epsilon) * advantage
                 actor_loss: torch.Tensor = -torch.min(surrogate1, surrogate2).mean(
                 ) - total_entropy * Run.instance().ppo_config.entropy_eps
-                self.agent.optimizers['critic'].zero_grad()
+                self.agent.optimizers['actor'].zero_grad()
                 actor_loss.backward()
-                self.agent.optimizers['critic'].step()
+                self.agent.optimizers['actor'].step()
                 torch.nn.utils.clip_grad_norm_(self.agent.networks.parameters(),
                                                Run.instance().ppo_config.max_grad_norm)
 
