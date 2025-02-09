@@ -18,10 +18,10 @@ class LSTMQNetwork(nn.Module):
 
         self.feature_extractor = nn.Sequential(
             nn.LSTM(run.network_config.input_shape,
-                    run.network_config.lstm_latent_size,
+                    run.network_config.feature_extractor_latent_size,
                     bidirectional=True,
                     batch_first=True))
-        fully_connected_input_shape = int(run.network_config.lstm_latent_size * 2 +
+        fully_connected_input_shape = int(run.network_config.feature_extractor_latent_size * 2 +
                                           run.network_config.output_shape)
         self.first_network = create_network(
             config,

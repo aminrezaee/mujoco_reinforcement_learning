@@ -66,8 +66,8 @@ def main():
                                        activation_class=ReLU,
                                        num_linear_layers=4,
                                        linear_hidden_shapes=[256, 256, 128, 128],
-                                       num_lstm_layers=1,
-                                       lstm_latent_size=256,
+                                       num_feature_extractor_layers=1,
+                                       feature_extractor_latent_size=256,
                                        use_bias=True,
                                        use_batch_norm=False,
                                        feature_extractor="LSTM",
@@ -132,8 +132,8 @@ def main():
         "net_activation": run.network_config.activation_class.__name__,
         "normalize_observations": f"{run.normalize_observations}",
         "normalize_rewards": f"{run.normalize_rewards}",
-        "num_lstm_layers": f"{run.network_config.num_lstm_layers}",
-        "lstm_latent_size": f"{run.network_config.lstm_latent_size}",
+        "num_feature_extractor_layers": f"{run.network_config.num_feature_extractor_layers}",
+        "feature_extractor_latent_size": f"{run.network_config.feature_extractor_latent_size}",
         "num_linear_layers": f"{run.network_config.num_linear_layers}",
     }
     with mlflow.start_run(tags=run_tags) as mlflow_run:

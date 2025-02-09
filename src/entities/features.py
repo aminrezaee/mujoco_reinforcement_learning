@@ -46,8 +46,8 @@ class NetworkConfig:
     activation_class: torch.nn.Module
     num_linear_layers: int
     linear_hidden_shapes: list[int]
-    num_lstm_layers: int
-    lstm_latent_size: int
+    num_feature_extractor_layers: int
+    feature_extractor_latent_size: int
     use_bias: bool
     use_batch_norm: bool
     feature_extractor: str
