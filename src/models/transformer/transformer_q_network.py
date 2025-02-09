@@ -37,7 +37,7 @@ class TransformerQNetwork(Module):
             "hidden_layer_count": run.network_config.num_linear_layers,
             "shapes": run.network_config.linear_hidden_shapes
         }
-        net_input_dim = int(hidden_dim + input_dim)
+        net_input_dim = int(hidden_dim + run.network_config.output_shape)
         self.first_network = create_network(config,
                                             net_input_dim,
                                             1,
