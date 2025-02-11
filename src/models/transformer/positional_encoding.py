@@ -10,7 +10,7 @@ class LearnedPositionalEncoding(Module):
         super(LearnedPositionalEncoding, self).__init__()
         run = Run.instance()
         self.pos_embedding = Embedding(run.environment_config.window_length,
-                                       run.network_config.feature_extractor_latent_size)
+                                       run.network_config.input_shape)
 
     def forward(self, x):
         """Add positional encoding to the input tensor x."""
