@@ -1,6 +1,6 @@
 from .agent import Agent
-from models.lstm.lstm_actor import LSTMActor as Actor
-from models.lstm.lstm_q_network import LSTMQNetwork as QNetwork
+from models.transformer.transformer_actor import TransformerActor as Actor
+from models.transformer.transformer_q_network import TransformerQNetwork as QNetwork
 import torch
 from entities.features import Run
 from torch.optim.lr_scheduler import ExponentialLR

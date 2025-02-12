@@ -1,5 +1,6 @@
 from models.network_block_creator import create_network
 from torch import nn
+from torch import Tensor
 from entities.features import Run
 
 
@@ -17,21 +18,21 @@ class LSTMCritic(nn.Module):
 
         self.feature_extractor = nn.Sequential(
             nn.LSTM(run.network_config.input_shape,
-                    run.network_config.lstm_latent_size,
+                    run.network_config.feature_extractor_latent_size,
                     bidirectional=True,
                     batch_first=True))
+        fully_connected_input_shape = int(run.network_config.feature_extractor_latent_size * 2)
         self.network = create_network(
             config,
-            input_shape=int(
-                run.network_config.lstm_latent_size * 2 *
-                run.environment_config.window_length),  # duo to bidirectional feature extractor
+            input_shape=fully_connected_input_shape,  # due to bidirectional feature extractor
             output_shape=1,
             normalize_at_the_end=False,
-            use_bias=run.network_config.use_bias)
+            use_bias=run.network_config.use_bias,
+            last_layer_std=run.network_config.last_layer_std)
 
-    def forward(self, x):
+    def forward(self, x: Tensor):
         features = self.feature_extractor(x)
-        current_timestep_features = features[0].reshape(len(x), -1)
+        current_timestep_features = features[0][:, -1, :]
         # current_timestep_features = features[0][:, -1, :]
         current_timestep_features = Run.instance().network_config.activation_class()(
             current_timestep_features)

@@ -18,23 +18,25 @@ class LSTMQNetwork(nn.Module):
 
         self.feature_extractor = nn.Sequential(
             nn.LSTM(run.network_config.input_shape,
-                    run.network_config.lstm_latent_size,
+                    run.network_config.feature_extractor_latent_size,
                     bidirectional=True,
                     batch_first=True))
-        fully_connected_input_shape = int(run.network_config.lstm_latent_size * 2 +
+        fully_connected_input_shape = int(run.network_config.feature_extractor_latent_size * 2 +
                                           run.network_config.output_shape)
         self.first_network = create_network(
             config,
             input_shape=fully_connected_input_shape,  # due to bidirectional feature extractor
             output_shape=1,
             normalize_at_the_end=False,
-            use_bias=run.network_config.use_bias)
+            use_bias=run.network_config.use_bias,
+            last_layer_std=run.network_config.last_layer_std)
         self.second_network = create_network(
             config,
             input_shape=fully_connected_input_shape,  # due to bidirectional feature extractor
             output_shape=1,
             normalize_at_the_end=False,
-            use_bias=run.network_config.use_bias)
+            use_bias=run.network_config.use_bias,
+            last_layer_std=run.network_config.last_layer_std)
 
     def forward(self, state: Tensor, action: Tensor):
         # input_tensor = cat([state, action], 1)

@@ -27,7 +27,7 @@ class Algorithm(ABC):
         test_timestep: Timestep = self.environment_helper.test_timestep
         for _ in range(1000):
             current_state = torch.clone(next_state)
-            action, _ = self.agent.act(current_state, return_dist=True, test_phase=False)
+            action, _ = self.agent.act(current_state, return_dist=True, test_phase=True)
             last_observation, reward, test_timestep.terminated, test_timestep.truncated, info = self.environment_helper.test_environment.step(
                 action.reshape(-1))
             if test_timestep.terminated:

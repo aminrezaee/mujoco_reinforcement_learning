@@ -23,10 +23,8 @@ class PPO(Algorithm):
             sub_actions, distributions = self.agent.act(current_state,
                                                         return_dist=True,
                                                         test_phase=False)
-            action_log_prob = [
-                distributions[i].log_prob(sub_actions[i]).sum() for i in range(batch_size)
-            ]
-            self.environment_helper.step(torch.cat(sub_actions, dim=0))
+            action_log_prob = distributions.log_prob(sub_actions).sum(dim=1)
+            self.environment_helper.step(sub_actions)
             next_state = self.environment_helper.get_state(test_phase=False)
             next_state_value = self.agent.get_state_value(next_state)
             memory_item = {
@@ -37,18 +35,16 @@ class PPO(Algorithm):
                 'next_state_value':
                 next_state_value.unsqueeze(1),
                 'action':
-                torch.cat(sub_actions, dim=0).unsqueeze(1),
+                sub_actions.unsqueeze(1),
                 'action_log_prob':
-                torch.tensor(action_log_prob).to(device)[:, None].unsqueeze(1),
+                action_log_prob.to(device).unsqueeze(1),
                 'reward':
                 torch.tensor(self.environment_helper.timestep.reward)[:,
                                                                       None].to(device).unsqueeze(1),
                 'terminated':
-                torch.tensor(
-                    self.environment_helper.timestep.terminated[:, None]).to(device).unsqueeze(1),
+                torch.tensor(self.environment_helper.timestep.terminated[:, None]).to(device),
                 'truncated':
-                torch.tensor(
-                    self.environment_helper.timestep.truncated[:, None]).to(device).unsqueeze(1)
+                torch.tensor(self.environment_helper.timestep.truncated[:, None]).to(device)
             }
             self.environment_helper.memory.append(
                 TensorDict(memory_item, batch_size=(batch_size, 1)))
@@ -70,23 +66,26 @@ class PPO(Algorithm):
         if run.normalize_rewards:
             # rewards = rewards * 0.1
             rewards = rewards - rewards.mean(dim=1).unsqueeze(1)
-        #     rewards = rewards / rewards.std(dim=1).unsqueeze(1)
-        terminated = memory['terminated']
-        done = memory['truncated']
-        done[:, -1, 0] = True
+            rewards = (rewards / rewards.std(dim=1).unsqueeze(1)) * run.ppo_config.advantage_scaler
+        terminated = memory['terminated'].unsqueeze(-1)
+        done = torch.clone(terminated)
+        done[:, -1, :] = True  # in last timestep the trajectory ended.
+
         current_state_values = memory['current_state_value']
         next_state_values = memory['next_state_value']
         advantage, value_target = generalized_advantage_estimate(run.ppo_config.gamma,
                                                                  run.ppo_config.lmbda,
                                                                  current_state_values,
-                                                                 next_state_values, rewards,
-                                                                 terminated, done)
+                                                                 next_state_values, rewards, done,
+                                                                 terminated)
         if run.ppo_config.normalize_advantage:
             advantage = advantage - advantage.mean(dim=1).unsqueeze(1)
-            # advantage = advantage / advantage.std(dim=1).unsqueeze(1)
+            advantage = (advantage /
+                         advantage.std(dim=1).unsqueeze(1)) * run.ppo_config.advantage_scaler
 
             value_target = value_target - value_target.mean(dim=1).unsqueeze(1)
-            # value_target = value_target / value_target.std(dim=1).unsqueeze(1)
+            value_target = (value_target /
+                            value_target.std(dim=1).unsqueeze(1)) * run.ppo_config.advantage_scaler
 
         memory['current_state_value_target'] = value_target
         memory['advantage'] = advantage
@@ -108,28 +107,22 @@ class PPO(Algorithm):
                 if len(batch) != batch_size:
                     continue
                 sub_actions = batch['action']
-                joint_index = np.random.randint(0, Run.instance().agent_config.sub_action_count)
-                mean, std = self.agent.networks['actor'](batch['current_state'])
-                distributions = [
-                    torch.distributions.Normal(mean[i], std[i]) for i in range(batch_size)
-                ]
-                action_log_prob = batch['action_log_prob'][:, joint_index]
+                _, distributions = self.agent.act(batch['current_state'], return_dist=True)
+                action_log_prob = batch['action_log_prob']
 
-                new_action_log_prob = torch.cat([
-                    distributions[i].log_prob(sub_actions[i]).sum()[None] for i in range(batch_size)
-                ])
+                new_action_log_prob = distributions.log_prob(sub_actions).sum(dim=1)
                 # critic loss
                 current_state_value = self.agent.get_state_value(batch['current_state'])
                 current_state_value_target = batch['current_state_value_target']
-                critic_loss: torch.Tensor = mse_loss(current_state_value,
-                                                     current_state_value_target,
-                                                     reduction='mean')
+                critic_loss: torch.Tensor = huber_loss(current_state_value,
+                                                       current_state_value_target,
+                                                       reduction='mean')
                 self.agent.optimizers['critic'].zero_grad()
                 critic_loss.backward()
                 self.agent.optimizers['critic'].step()
                 # actor loss
                 advantage = batch['advantage']
-                total_entropy = sum([d.entropy().mean() for d in distributions])
+                total_entropy = distributions.entropy().mean()
                 ratio = (new_action_log_prob - action_log_prob).exp()[:, None]
                 # print(ratio.min() , ratio.max())
                 surrogate1 = ratio * advantage
@@ -137,9 +130,9 @@ class PPO(Algorithm):
                                          1.0 + Run.instance().ppo_config.clip_epsilon) * advantage
                 actor_loss: torch.Tensor = -torch.min(surrogate1, surrogate2).mean(
                 ) - total_entropy * Run.instance().ppo_config.entropy_eps
-                self.agent.optimizers['critic'].zero_grad()
+                self.agent.optimizers['actor'].zero_grad()
                 actor_loss.backward()
-                self.agent.optimizers['critic'].step()
+                self.agent.optimizers['actor'].step()
                 torch.nn.utils.clip_grad_norm_(self.agent.networks.parameters(),
                                                Run.instance().ppo_config.max_grad_norm)
 
