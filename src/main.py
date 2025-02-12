@@ -72,7 +72,7 @@ def main():
                                        use_batch_norm=False,
                                        feature_extractor="LSTM",
                                        last_layer_std=0.01)
-        environment_config = EnvironmentConfig(maximum_timesteps=500, num_envs=5, window_length=5)
+        environment_config = EnvironmentConfig(maximum_timesteps=500, num_envs=5, window_length=20)
         dynamic_config = DynamicConfig(0, 0, 0, 0)
         makedirs(experiments_directory, exist_ok=True)
         if experiment_id < 0:  # then create a new one
