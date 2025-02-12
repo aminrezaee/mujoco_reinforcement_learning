@@ -2,7 +2,6 @@ from torch import nn
 from models.network_block_creator import create_network
 from entities.features import Run
 import torch
-from memory_profiler import profile
 
 
 class LSTMActor(nn.Module):
