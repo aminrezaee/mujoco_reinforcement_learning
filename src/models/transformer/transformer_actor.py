@@ -2,7 +2,7 @@ from torch.nn import Linear, Sequential, TransformerEncoderLayer, TransformerEnc
 from models.network_block_creator import create_network
 from entities.features import Run
 import torch
-from .positional_encoding import LearnedPositionalEncoding
+from .positional_encoding import LearnedPositionalEncoding, SinusoidalPositionalEncoding
 
 
 class TransformerActor(Module):
@@ -14,7 +14,7 @@ class TransformerActor(Module):
         hidden_dim = run.network_config.feature_extractor_latent_size
         self.activation_class = run.network_config.activation_class
         self.use_bias = run.network_config.use_bias
-        self.positional_encoding = LearnedPositionalEncoding()
+        self.positional_encoding = SinusoidalPositionalEncoding()
         self.projection = Sequential(Linear(input_dim, hidden_dim, bias=self.use_bias),
                                      self.activation_class())
         self.encoder_layer = TransformerEncoderLayer(d_model=hidden_dim,
