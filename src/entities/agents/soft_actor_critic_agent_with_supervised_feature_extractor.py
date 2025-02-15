@@ -1,6 +1,7 @@
 from .agent import Agent
-from models.transformer.simple.transformer_actor import TransformerActor as Actor
-from models.transformer.simple.transformer_q_network import TransformerQNetwork as QNetwork
+from models.transformer.with_feature_extractor.transformer_actor import TransformerActor as Actor
+from models.transformer.with_feature_extractor.transformer_q_network import TransformerQNetwork as QNetwork
+from models.transformer.with_feature_extractor.feature_extractor import FeatureExtractor
 import torch
 from entities.features import Run
 from torch.optim.lr_scheduler import ExponentialLR
@@ -12,10 +13,14 @@ class SoftActorCriticAgent(Agent):
     def initialize_networks(self):
         run = Run.instance()
         # initialize models
-        self.networks['actor'] = Actor()
-        self.networks['online_critic'] = QNetwork()
-        self.networks['target_critic'] = QNetwork()
+        feature_extractor = FeatureExtractor()
+        self.networks['feature_extractor'] = feature_extractor
+        self.networks['actor'] = Actor(feature_extractor)
+        self.networks['online_critic'] = QNetwork(feature_extractor)
+        self.networks['target_critic'] = QNetwork(feature_extractor)
         # initialize optimizers
+        self.optimizers['feature_extractor'] = torch.optim.Adam(
+            self.networks['feature_extractor'].parameters(), lr=run.training_config.learning_rate)
         self.optimizers['actor'] = torch.optim.Adam(self.networks['actor'].parameters(),
                                                     lr=run.training_config.learning_rate)
         self.optimizers['online_critic'] = torch.optim.Adam(
@@ -27,6 +32,8 @@ class SoftActorCriticAgent(Agent):
             self.optimizers['alpha'] = torch.optim.Adam(
                 [self.log_alpha], lr=Run.instance().training_config.learning_rate)
         # initialize schedulers
+        self.schedulers['feature_extractor'] = ExponentialLR(self.optimizers['feature_extractor'],
+                                                             gamma=0.999)
         self.schedulers['actor'] = ExponentialLR(self.optimizers['actor'], gamma=0.999)
         self.schedulers['online_critic'] = ExponentialLR(self.optimizers['online_critic'],
                                                          gamma=0.999)
