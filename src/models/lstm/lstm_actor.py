@@ -2,7 +2,6 @@ from torch import nn
 from models.network_block_creator import create_network
 from entities.features import Run
 import torch
-from memory_profiler import profile
 
 
 class LSTMActor(nn.Module):
@@ -29,16 +28,23 @@ class LSTMActor(nn.Module):
                                     run.network_config.use_bias,
                                     False,
                                     last_layer_std=run.network_config.last_layer_std)
-        self.actor_logstd = nn.Parameter(torch.zeros(run.network_config.output_shape))
+        self.actor_logstd = create_network(config,
+                                           int(run.network_config.feature_extractor_latent_size *
+                                               2 * run.environment_config.window_length),
+                                           run.network_config.output_shape,
+                                           False,
+                                           run.network_config.use_bias,
+                                           False,
+                                           last_layer_std=run.network_config.last_layer_std)
         pass
 
     def forward(self, x):  # x of shape (batch_size, sequence_length, 346)
         run = Run.instance()
         features = self.feature_extractor(x)[0].reshape(
             len(x), -1)  # features of shape (batch_size, sequence_length, 20)
-        features = Run.instance().network_config.activation_class()(features)
+        features = run.network_config.activation_class()(features)
         output = self.actor(features)
-        std = self.actor_logstd[:run.network_config.output_shape].exp()
+        std = 0.2 * self.actor_logstd(features).exp()
         return output, torch.repeat_interleave(std[None, :], x.shape[0], dim=0)
 
     def act(self, x: torch.Tensor):
