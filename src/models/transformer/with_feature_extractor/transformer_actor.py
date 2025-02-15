@@ -7,10 +7,10 @@ from .feature_extractor import FeatureExtractor
 
 class TransformerActor(Module):
 
-    def __init__(self):
+    def __init__(self, feature_extractor: FeatureExtractor):
         super(TransformerActor, self).__init__()
         run = Run.instance()
-        self.feature_extractor = FeatureExtractor()
+        self.feature_extractor = feature_extractor
         hidden_dim = run.network_config.feature_extractor_latent_size
         config = {
             "final_activation": Tanh,
