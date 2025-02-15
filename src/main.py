@@ -1,5 +1,5 @@
 from entities.agents.ppo_agent import PPOAgent
-from entities.agents.soft_actor_critic_agent import SoftActorCriticAgent
+from entities.agents.soft_actor_critic_agent_with_supervised_feature_extractor import SoftActorCriticAgent
 from environments.humanoid.running_gym_sequential_vectorized import EnvironmentHelper
 import torch
 from torch.nn import ReLU, ELU
@@ -8,7 +8,7 @@ from utils.logger import Logger
 from utils.io import find_experiment_name
 from entities.features import *
 from entities.algorithms.ppo import PPO
-from entities.algorithms.soft_actor_critic import SoftActorCritic
+from entities.algorithms.soft_actor_critic_pretrain_feat_ext import SoftActorCritic
 from os import makedirs, listdir
 import mlflow
 from environments.humanoid.humanoid_altered import SymmetricHumanoid
