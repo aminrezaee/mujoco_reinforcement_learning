@@ -1,4 +1,5 @@
 from torch.nn import Module, Sequential, Linear, TransformerEncoderLayer, TransformerEncoder
+from torch import Tensor, cat
 from entities.features import Run
 from models.transformer.positional_encoding import SinusoidalPositionalEncoding
 """
@@ -16,7 +17,7 @@ class FeatureExtractor(Module):
         hidden_dim = run.network_config.feature_extractor_latent_size
         self.activation_class = run.network_config.activation_class
         self.use_bias = run.network_config.use_bias
-        self.positional_encoding = SinusoidalPositionalEncoding()
+        positional_encoding = SinusoidalPositionalEncoding()
         projection = Sequential(Linear(input_dim, hidden_dim, bias=self.use_bias),
                                 self.activation_class())
         encoder_layer = TransformerEncoderLayer(d_model=hidden_dim,
@@ -32,12 +33,12 @@ class FeatureExtractor(Module):
             Linear(int(hidden_dim * run.environment_config.window_length),
                    int(hidden_dim / 2),
                    bias=self.use_bias), self.activation_class())
-        self.extractor = Sequential(projection, encoder, fully_connected)
+        self.extractor = Sequential(positional_encoding, projection, encoder, fully_connected)
         self.output_layer = Sequential(
             Linear(int(hidden_dim / 2), hidden_dim, bias=self.use_bias), self.activation_class(),
             Linear(hidden_dim, run.network_config.input_shape, bias=self.use_bias))
 
-    def forward(self, x):
-        x = self.positional_encoding(x)
-        x = self.extractor(x)
+    def forward(self, state: Tensor, action: Tensor):
+        x = self.extractor(state)
+        x = cat([x, action], dim=1)
         return self.output_layer(x)

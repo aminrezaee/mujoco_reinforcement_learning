@@ -7,11 +7,11 @@ from .feature_extractor import FeatureExtractor
 
 class TransformerQNetwork(Module):
 
-    def __init__(self):
+    def __init__(self, feature_extractor: FeatureExtractor):
         super(TransformerQNetwork, self).__init__()
         run = Run.instance()
         hidden_dim = run.network_config.feature_extractor_latent_size
-        self.feature_extractor = FeatureExtractor()
+        self.feature_extractor = feature_extractor
         self.activation_class = run.network_config.activation_class
         self.use_bias = run.network_config.use_bias
         config = {
