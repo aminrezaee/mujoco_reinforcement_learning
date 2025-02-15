@@ -1,15 +1,14 @@
-from torch.nn import Linear, Sequential, TransformerEncoderLayer, TransformerEncoder, Transformer, Tanh, Parameter, Module
+from torch.nn import Linear, Sequential, TransformerEncoderLayer, TransformerEncoder, Tanh, Parameter, Module
 from models.network_block_creator import create_network
 from entities.features import Run
 import torch
-from torch import Tensor, cat
-from .positional_encoding import LearnedPositionalEncoding, SinusoidalPositionalEncoding
+from models.transformer.positional_encoding import SinusoidalPositionalEncoding
 
 
-class TransformerQNetwork(Module):
+class TransformerActor(Module):
 
     def __init__(self):
-        super(TransformerQNetwork, self).__init__()
+        super(TransformerActor, self).__init__()
         run = Run.instance()
         input_dim = run.network_config.input_shape
         hidden_dim = run.network_config.feature_extractor_latent_size
@@ -34,36 +33,32 @@ class TransformerQNetwork(Module):
             encoder_layer=self.encoder_layer,
             num_layers=run.network_config.num_feature_extractor_layers)
         config = {
-            "final_activation": None,
+            "final_activation": Tanh,
             "activation": run.network_config.activation_class,
             "hidden_layer_count": run.network_config.num_linear_layers,
             "shapes": run.network_config.linear_hidden_shapes
         }
-        net_input_dim = int(hidden_dim + run.network_config.output_shape)
-        self.first_network = create_network(config,
-                                            net_input_dim,
-                                            1,
-                                            False,
-                                            run.network_config.use_bias,
-                                            False,
-                                            last_layer_std=run.network_config.last_layer_std)
-        self.second_network = create_network(config,
-                                             net_input_dim,
-                                             1,
-                                             False,
-                                             run.network_config.use_bias,
-                                             False,
-                                             last_layer_std=run.network_config.last_layer_std)
+        self.actor = create_network(config,
+                                    hidden_dim,
+                                    run.network_config.output_shape,
+                                    False,
+                                    run.network_config.use_bias,
+                                    False,
+                                    last_layer_std=run.network_config.last_layer_std)
+        self.actor_logstd = Parameter(torch.zeros(run.network_config.output_shape))
         pass
 
-    def forward(self, state: Tensor,
-                action: Tensor):  # x of shape (batch_size, sequence_length, 346)
-        state = self.positional_encoding(state)
-        projections = self.projection(state)
+    def forward(self, x):  # x of shape (batch_size, sequence_length, 346)
+        run = Run.instance()
+        x = self.positional_encoding(x)
+        projections = self.projection(x)
         features = self.encoder(projections).reshape(
-            len(state), -1)  # features of shape (batch_size, sequence_length, hidden_dim)
+            len(x), -1)  # features of shape (batch_size, sequence_length, 20)
         compressed_features = self.compression(features)
         features = Run.instance().network_config.activation_class()(compressed_features)
-        input_tensor = cat([features, action], 1)
-        out1, out2 = self.first_network(input_tensor), self.second_network(input_tensor)
-        return out1, out2
+        output = self.actor(features)
+        std = self.actor_logstd[:run.network_config.output_shape].exp()
+        return output, torch.repeat_interleave(std[None, :], x.shape[0], dim=0)
+
+    def act(self, x: torch.Tensor):
+        return self.forward(x)

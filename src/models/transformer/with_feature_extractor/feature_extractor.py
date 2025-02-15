@@ -1,5 +1,6 @@
 from torch.nn import Module, Sequential, Linear, TransformerEncoderLayer, TransformerEncoder
 from entities.features import Run
+from models.transformer.positional_encoding import SinusoidalPositionalEncoding
 """
     the goal of feature extractor is to predict the next timestep observation from the current observation.
     after training the feature extractor, we use the extractor subnetwork to extract features from the observation
@@ -15,6 +16,7 @@ class FeatureExtractor(Module):
         hidden_dim = run.network_config.feature_extractor_latent_size
         self.activation_class = run.network_config.activation_class
         self.use_bias = run.network_config.use_bias
+        self.positional_encoding = SinusoidalPositionalEncoding()
         projection = Sequential(Linear(input_dim, hidden_dim, bias=self.use_bias),
                                 self.activation_class())
         encoder_layer = TransformerEncoderLayer(d_model=hidden_dim,
@@ -36,5 +38,6 @@ class FeatureExtractor(Module):
             Linear(hidden_dim, run.network_config.input_shape, bias=self.use_bias))
 
     def forward(self, x):
+        x = self.positional_encoding(x)
         x = self.extractor(x)
         return self.output_layer(x)
