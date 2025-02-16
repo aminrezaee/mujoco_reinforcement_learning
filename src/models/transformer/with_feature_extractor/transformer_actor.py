@@ -30,7 +30,7 @@ class TransformerActor(Module):
 
     def forward(self, x):  # x of shape (batch_size, sequence_length, 346)
         run = Run.instance()
-        features = self.feature_extractor.extractor(x)
+        features = self.feature_extractor.extract_features(x)
         output = self.actor(features)
         std = self.actor_logstd[:run.network_config.output_shape].exp()
         return output, torch.repeat_interleave(std[None, :], x.shape[0], dim=0)

@@ -39,7 +39,7 @@ class TransformerQNetwork(Module):
 
     def forward(self, state: Tensor,
                 action: Tensor):  # x of shape (batch_size, sequence_length, 346)
-        features = self.feature_extractor.extractor(state)
+        features = self.feature_extractor.extract_features(state)
         input_tensor = cat([features, action], 1)
         out1, out2 = self.first_network(input_tensor), self.second_network(input_tensor)
         return out1, out2
