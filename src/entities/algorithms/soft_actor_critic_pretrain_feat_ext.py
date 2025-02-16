@@ -24,7 +24,7 @@ def get_action_log_probs(distributions, state_actions):
 
 
 def get_feature_extractor_loss(next_state_predictions: torch.Tensor, next_states: torch.Tensor):
-    return
+    return mse_loss(next_state_predictions, next_states[:, -1] - next_states[:, -2])
 
 
 class SoftActorCritic(Algorithm):
@@ -39,7 +39,7 @@ class SoftActorCritic(Algorithm):
         batch_size = run.training_config.batch_size
         memory = memory.view(-1)
         batches_per_timestep = 1
-        losses = [[] for i in range(5)]
+        losses = [[] for i in range(6)]
         idx = torch.randperm(len(memory))
         shuffled_memory = torch.clone(memory)[idx]
         shuffled_memory['reward'] = shuffled_memory['reward'] - shuffled_memory['reward'].mean()
@@ -49,17 +49,6 @@ class SoftActorCritic(Algorithm):
             state_batch, next_state_batch, reward_batch, action_batch, mask_batch = batch[
                 'current_state'], batch['next_state'], batch['reward'], batch['action'], batch[
                     'is_alive']
-            with torch.no_grad():
-                next_state_actions, distributions = self.agent.act(next_state_batch,
-                                                                   return_dist=True)
-                next_state_actions_log_prob = get_action_log_probs(distributions,
-                                                                   next_state_actions)
-                qf1_next_target, qf2_next_target = self.agent.networks['target_critic'](
-                    next_state_batch, next_state_actions.to(run.device))
-                min_qf_next_target = torch.min(
-                    qf1_next_target, qf2_next_target) - self.alpha * next_state_actions_log_prob
-                next_q_value = (reward_batch + mask_batch * run.sac_config.gamma *
-                                (min_qf_next_target)).to(run.dtype)
 
             # feature extractor loss
             self.agent.networks['feature_extractor'].train()
@@ -73,6 +62,19 @@ class SoftActorCritic(Algorithm):
                                            Run.instance().ppo_config.max_grad_norm)
             self.agent.optimizers['feature_extractor'].step()  # now freeze the feature extractor
             self.agent.networks['feature_extractor'].eval()
+
+            with torch.no_grad():
+                next_state_actions, distributions = self.agent.act(next_state_batch,
+                                                                   return_dist=True)
+                next_state_actions_log_prob = get_action_log_probs(distributions,
+                                                                   next_state_actions)
+                qf1_next_target, qf2_next_target = self.agent.networks['target_critic'](
+                    next_state_batch, next_state_actions.to(run.device))
+                min_qf_next_target = torch.min(
+                    qf1_next_target, qf2_next_target) - self.alpha * next_state_actions_log_prob
+                next_q_value = (reward_batch + mask_batch * run.sac_config.gamma *
+                                (min_qf_next_target)).to(run.dtype)
+
             qf1, qf2 = self.agent.networks['online_critic'](
                 state_batch, action_batch
             )  # Two Q-functions to mitigate positive bias in the policy improvement step
@@ -132,7 +134,8 @@ class SoftActorCritic(Algorithm):
             losses[2].append(policy_loss.item())
             losses[3].append(min_qf_pi.mean().item())
             losses[4].append(alpha_loss.item())
-        return (sum(losses[j]) / len(losses[j]) for j in range(5))
+            losses[5].append(feature_extractor_loss.item())
+        return (sum(losses[j]) / len(losses[j]) for j in range(6))
 
     def _iterate(self):
         self.environment_helper.reset(release_memory=False)
@@ -188,21 +191,21 @@ class SoftActorCritic(Algorithm):
                    print_message=True)
         if len(losses) > 0:
             metrics = {
-                "qf1_loss": torch.tensor(losses)[:, 0].mean(),
-                "qf2_loss": torch.tensor(losses)[:, 1].mean(),
-                "policy_loss": torch.tensor(losses)[:, 2].mean(),
-                "min_qf": torch.tensor(losses)[:, 3].mean(),
+                "qf1_loss": round(torch.tensor(losses)[:, 0].mean().item(), 3),
+                "qf2_loss": round(torch.tensor(losses)[:, 1].mean().item(), 3),
+                "policy_loss": round(torch.tensor(losses)[:, 2].mean().item(), 3),
+                "min_qf": round(torch.tensor(losses)[:, 3].mean().item(), 3),
+                "feature_extractor_loss": round(torch.tensor(losses)[:, 5].mean().item(), 3),
             }
             Logger.log(
-                f"qf1_loss: {torch.tensor(losses)[:,0].mean()} , qf2_loss: {torch.tensor(losses)[:,1].mean()}",
+                f"qf1_loss: {metrics['qf1_loss']} , qf2_loss: {metrics['qf2_loss']} , feature_extractor_loss:{metrics['feature_extractor_loss']}",
                 episode=run.dynamic_config.current_episode,
                 log_type=Logger.REWARD_TYPE,
                 print_message=True)
-            Logger.log(
-                f"policy_loss: {torch.tensor(losses)[:,2].mean()}, min_qf:{torch.tensor(losses)[:,3].mean()}",
-                episode=run.dynamic_config.current_episode,
-                log_type=Logger.REWARD_TYPE,
-                print_message=True)
+            Logger.log(f"policy_loss: {metrics['policy_loss']}, min_qf:{metrics['min_qf']}",
+                       episode=run.dynamic_config.current_episode,
+                       log_type=Logger.REWARD_TYPE,
+                       print_message=True)
             # Logger.log(
             #     f"alpha_loss: {torch.tensor(losses)[:,4].mean()} , alpha value: {self.alpha}",
             #     episode=run.dynamic_config.current_episode,
