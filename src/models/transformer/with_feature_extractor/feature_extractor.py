@@ -35,14 +35,11 @@ class FeatureExtractor(Module):
                    int(hidden_dim / 2),
                    bias=self.use_bias), self.activation_class())
         self.output_layer = Sequential(
-            Linear(int((hidden_dim / 2) + run.network_config.output_shape),
-                   hidden_dim,
-                   bias=self.use_bias), self.activation_class(),
+            Linear(int((hidden_dim / 2)), hidden_dim, bias=self.use_bias), self.activation_class(),
             Linear(hidden_dim, run.network_config.input_shape, bias=self.use_bias))
 
-    def forward(self, state: Tensor, action: Tensor):
+    def forward(self, state: Tensor):
         x = self.extract_features(state)
-        x = cat([x, action], dim=1)
         return self.output_layer(x)
 
     def extract_features(self, state: Tensor):

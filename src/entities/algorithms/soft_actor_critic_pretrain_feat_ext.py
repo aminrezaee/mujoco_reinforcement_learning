@@ -54,7 +54,7 @@ class SoftActorCritic(Algorithm):
             self.agent.networks['feature_extractor'].train()
             self.agent.optimizers['feature_extractor'].zero_grad()
             next_state_predictions = self.agent.networks['feature_extractor'](
-                batch['current_state'], batch['action'])
+                batch['current_state'])
             feature_extractor_loss: torch.Tensor = get_feature_extractor_loss(
                 next_state_predictions, batch['next_state'])
             feature_extractor_loss.backward()

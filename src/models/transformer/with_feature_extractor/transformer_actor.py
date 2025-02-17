@@ -13,7 +13,7 @@ class TransformerActor(Module):
         run = Run.instance()
         self.environment_feature_extractor = environment_feature_extractor
         self.feature_extractor = FeatureExtractor()
-        hidden_dim = run.network_config.feature_extractor_latent_size
+        hidden_dim = int(2 * run.network_config.input_shape)
         config = {
             "final_activation": Tanh,
             "activation": run.network_config.activation_class,
@@ -32,8 +32,8 @@ class TransformerActor(Module):
 
     def forward(self, x):  # x of shape (batch_size, sequence_length, 346)
         run = Run.instance()
-        environment_features = self.environment_feature_extractor.extract_features(x)
-        features = self.feature_extractor.extract_features(x)
+        environment_features = self.environment_feature_extractor(x)
+        features = self.feature_extractor(x)
         total_features = cat([features, environment_features], dim=1)
         output = self.actor(total_features)
         std = self.actor_logstd[:run.network_config.output_shape].exp()
