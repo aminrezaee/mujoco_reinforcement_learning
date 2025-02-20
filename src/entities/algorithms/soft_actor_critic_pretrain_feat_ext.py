@@ -46,9 +46,10 @@ class SoftActorCritic(Algorithm):
         shuffled_memory['reward'] = (shuffled_memory['reward'] / shuffled_memory['reward'].std())
         self.agent.networks['feature_extractor'].train()
         feature_extractor_loss = torch.zeros(1)
-        if (run.dynamic_config.current_episode > 0) and (run.dynamic_config.current_episode % 10
-                                                         == 0):
-            for i in range(10):
+        if (run.dynamic_config.current_episode
+                > 0) and (run.dynamic_config.current_episode %
+                          run.training_config.supervised_training_interval == 0):
+            for i in range(run.training_config.supervised_batches_per_training_interval):
                 # feature extractor loss
                 batch = shuffled_memory[int(i * batch_size):int((i + 1) * batch_size)]
                 self.agent.optimizers['feature_extractor'].zero_grad()

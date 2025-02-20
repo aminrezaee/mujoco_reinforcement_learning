@@ -43,7 +43,9 @@ def main():
                                          weight_decay=1e-4,
                                          batch_size=500,
                                          epochs_per_iteration=10,
-                                         minimum_learning_rate=1e-4)
+                                         minimum_learning_rate=1e-4,
+                                         supervised_batches_per_training_interval=10,
+                                         supervised_training_interval=10)
         ppo_config = PPOConfig(max_grad_norm=1.0,
                                clip_epsilon=0.1,
                                gamma=0.99,

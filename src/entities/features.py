@@ -22,6 +22,8 @@ class TrainingConfig:
     batch_size: float  # for example 0.25 means each batch has size int(0.25 * maximum_timesteps)
     epochs_per_iteration: int  # Number of optimization steps per training iteration
     minimum_learning_rate: float
+    supervised_batches_per_training_interval: int
+    supervised_training_interval: int
     agents_dir: str = './outputs/agents'
     save_per_iteration: int = 10
 
