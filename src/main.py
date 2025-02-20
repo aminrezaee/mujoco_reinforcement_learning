@@ -56,7 +56,7 @@ def main():
                                gamma=0.99,
                                alpha=0.05,
                                tau=0.005,
-                               memory_capacity=999,
+                               memory_capacity=5000,
                                target_update_interval=1,
                                automatic_entropy_tuning=False)
         agent_config = AgentConfig(sub_action_count=1)

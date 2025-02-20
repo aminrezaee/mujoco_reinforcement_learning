@@ -44,24 +44,32 @@ class SoftActorCritic(Algorithm):
         shuffled_memory = torch.clone(memory)[idx]
         shuffled_memory['reward'] = shuffled_memory['reward'] - shuffled_memory['reward'].mean()
         shuffled_memory['reward'] = (shuffled_memory['reward'] / shuffled_memory['reward'].std())
+        self.agent.networks['feature_extractor'].train()
+        feature_extractor_loss = torch.zeros(1)
+        if (run.dynamic_config.current_episode > 0) and (run.dynamic_config.current_episode % 10
+                                                         == 0):
+            for i in range(10):
+                # feature extractor loss
+                batch = shuffled_memory[int(i * batch_size):int((i + 1) * batch_size)]
+                self.agent.optimizers['feature_extractor'].zero_grad()
+                next_state_predictions = self.agent.networks['feature_extractor'](
+                    batch['current_state'])
+                feature_extractor_loss: torch.Tensor = get_feature_extractor_loss(
+                    next_state_predictions, batch['next_state'])
+                feature_extractor_loss.backward()
+                torch.nn.utils.clip_grad_norm_(
+                    self.agent.networks['feature_extractor'].parameters(),
+                    Run.instance().ppo_config.max_grad_norm)
+                self.agent.optimizers['feature_extractor'].step(
+                )  # now freeze the feature extractor
+                losses[5].append(feature_extractor_loss.item())
+        self.agent.networks['feature_extractor'].eval()
+
         for i in range(batches_per_timestep):
             batch = shuffled_memory[int(i * batch_size):int((i + 1) * batch_size)]
             state_batch, next_state_batch, reward_batch, action_batch, mask_batch = batch[
                 'current_state'], batch['next_state'], batch['reward'], batch['action'], batch[
                     'is_alive']
-
-            # feature extractor loss
-            self.agent.networks['feature_extractor'].train()
-            self.agent.optimizers['feature_extractor'].zero_grad()
-            next_state_predictions = self.agent.networks['feature_extractor'](
-                batch['current_state'])
-            feature_extractor_loss: torch.Tensor = get_feature_extractor_loss(
-                next_state_predictions, batch['next_state'])
-            feature_extractor_loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.agent.networks['feature_extractor'].parameters(),
-                                           Run.instance().ppo_config.max_grad_norm)
-            self.agent.optimizers['feature_extractor'].step()  # now freeze the feature extractor
-            self.agent.networks['feature_extractor'].eval()
 
             with torch.no_grad():
                 next_state_actions, distributions = self.agent.act(next_state_batch,
@@ -134,7 +142,8 @@ class SoftActorCritic(Algorithm):
             losses[2].append(policy_loss.item())
             losses[3].append(min_qf_pi.mean().item())
             losses[4].append(alpha_loss.item())
-            losses[5].append(feature_extractor_loss.item())
+            if len(losses[5]) == 0:
+                losses[5].append(feature_extractor_loss.item())
         return (sum(losses[j]) / len(losses[j]) for j in range(6))
 
     def _iterate(self):
