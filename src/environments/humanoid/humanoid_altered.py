@@ -32,9 +32,9 @@ class SymmetricHumanoid(HumanoidEnv):
 
     def symmetric_reward(self):
         mass_offsets = self.data.cinert[1:, 6:8]  # 13 body parts, 2 mass offsets (x, y)
-        symmetric_foot = -abs(mass_offsets[5] + mass_offsets[8]).sum()
-        symmetric_upper_arm = -abs(mass_offsets[9] + mass_offsets[11]).sum()
-        symmetric_lower_arm = -abs(mass_offsets[10] + mass_offsets[12]).sum()
-        symmetric_thigh = -abs(mass_offsets[3] + mass_offsets[6]).sum()
+        symmetric_foot = -abs(mass_offsets[5, 1] + mass_offsets[8, 1]).sum()
+        symmetric_upper_arm = -abs(mass_offsets[9, 1] + mass_offsets[11, 1]).sum()
+        symmetric_lower_arm = -abs(mass_offsets[10, 1] + mass_offsets[12, 1]).sum()
+        symmetric_thigh = -abs(mass_offsets[3, 1] + mass_offsets[6, 1]).sum()
         symmetric_pelvis = -abs(mass_offsets[2]).sum()
         return symmetric_foot + symmetric_upper_arm + symmetric_lower_arm + symmetric_thigh + symmetric_pelvis
