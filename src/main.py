@@ -2,7 +2,7 @@ from entities.agents.ppo_agent import PPOAgent
 from entities.agents.soft_actor_critic_agent_with_supervised_feature_extractor import SoftActorCriticAgent
 from environments.humanoid.running_gym_sequential_vectorized import EnvironmentHelper
 import torch
-from torch.nn import ReLU, ELU
+from torch.nn import ReLU
 from argparse import ArgumentParser
 from utils.logger import Logger
 from utils.io import find_experiment_name
@@ -54,7 +54,7 @@ def main():
                                advantage_scaler=1e0,
                                normalize_advantage=False,
                                critic_coeffiecient=1.0)
-        sac_config = SACConfig(max_grad_norm=1.0,
+        sac_config = SACConfig(max_grad_norm=100.0,
                                gamma=0.99,
                                alpha=0.05,
                                tau=0.005,
